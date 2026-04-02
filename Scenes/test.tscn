@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://14loqnh75c1e" path="res://Scenes/end.tscn" id="7_5wyu1"]
 [ext_resource type="PackedScene" uid="uid://coa6l5lkjrr10" path="res://Scenes/falling_platform.tscn" id="8_0c07c"]
 [ext_resource type="PackedScene" uid="uid://bmx1upcenjtym" path="res://Scenes/start.tscn" id="9_2cgwh"]
+[ext_resource type="PackedScene" uid="uid://dx07dx2beago5" path="res://Scenes/fire.tscn" id="10_iaow0"]
 [ext_resource type="PackedScene" uid="uid://crvawuljcpo1h" path="res://Scenes/checkpoint.tscn" id="10_mie3u"]
 [ext_resource type="PackedScene" uid="uid://cm31ok0y30l5c" path="res://Scenes/fan.tscn" id="13_aees8"]
 
@@ -324,5 +325,20 @@ position = Vector2(368, 224)
 
 [node name="FallingPlatform" parent="Node" unique_id=1974783609 instance=ExtResource("8_0c07c")]
 position = Vector2(303, 206)
+
+[node name="Fire" parent="Node" unique_id=538522475 instance=ExtResource("10_iaow0")]
+position = Vector2(433, 273)
+
+[node name="Fire2" parent="Node" unique_id=1875749625 instance=ExtResource("10_iaow0")]
+position = Vector2(449, 273)
+
+[node name="Fire3" parent="Node" unique_id=1259048915 instance=ExtResource("10_iaow0")]
+position = Vector2(465, 273)
+
+[node name="Fire4" parent="Node" unique_id=1526554237 instance=ExtResource("10_iaow0")]
+position = Vector2(481, 273)
+
+[node name="Fire5" parent="Node" unique_id=98392465 instance=ExtResource("10_iaow0")]
+position = Vector2(497, 273)
 
 [connection signal="body_entered" from="WorldBoundary" to="." method="_on_world_boundary_body_entered"]

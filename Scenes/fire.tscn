@@ -1,0 +1,142 @@
+[gd_scene format=3 uid="uid://dx07dx2beago5"]
+
+[ext_resource type="Texture2D" uid="uid://xfve3iu06nk4" path="res://Assets/Pixel Adventure 1/Traps/Fire/Hit (16x32).png" id="1_idb68"]
+[ext_resource type="Script" uid="uid://8b7djrmkmvcj" path="res://Scripts/fire.gd" id="1_s2jnl"]
+[ext_resource type="Texture2D" uid="uid://qhehgk1dentg" path="res://Assets/Pixel Adventure 1/Traps/Fire/Off.png" id="2_s2jnl"]
+[ext_resource type="Texture2D" uid="uid://k67mo03d5hho" path="res://Assets/Pixel Adventure 1/Traps/Fire/On (16x32).png" id="3_8uni6"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hrujk"]
+atlas = ExtResource("1_idb68")
+region = Rect2(0, 0, 16, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6dmct"]
+atlas = ExtResource("1_idb68")
+region = Rect2(16, 0, 16, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_w35r5"]
+atlas = ExtResource("1_idb68")
+region = Rect2(32, 0, 16, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lcnk6"]
+atlas = ExtResource("1_idb68")
+region = Rect2(48, 0, 16, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3h6i6"]
+atlas = ExtResource("3_8uni6")
+region = Rect2(0, 0, 16, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gdy38"]
+atlas = ExtResource("3_8uni6")
+region = Rect2(16, 0, 16, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lcqii"]
+atlas = ExtResource("3_8uni6")
+region = Rect2(32, 0, 16, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_f515s"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hrujk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6dmct")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_w35r5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lcnk6")
+}],
+"loop": false,
+"name": &"activation",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_s2jnl")
+}],
+"loop": true,
+"name": &"off",
+"speed": 20.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3h6i6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gdy38")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lcqii")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3h6i6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gdy38")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lcqii")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3h6i6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gdy38")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lcqii")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3h6i6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gdy38")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lcqii")
+}],
+"loop": false,
+"name": &"on",
+"speed": 15.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_r0pe4"]
+size = Vector2(16, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_efju2"]
+size = Vector2(14, 2)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s2jnl"]
+size = Vector2(16, 16)
+
+[node name="Fire" type="StaticBody2D" unique_id=538522475]
+z_index = 2
+collision_layer = 2
+script = ExtResource("1_s2jnl")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1195567236]
+sprite_frames = SubResource("SpriteFrames_f515s")
+animation = &"on"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=200489250]
+position = Vector2(0, 8)
+shape = SubResource("RectangleShape2D_r0pe4")
+
+[node name="Hitbox" type="Area2D" parent="." unique_id=1225444879]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox" unique_id=2070177380]
+position = Vector2(0, -1)
+shape = SubResource("RectangleShape2D_efju2")
+debug_color = Color(0.6983782, 0.49361426, 0, 0.41960785)
+
+[node name="Fire" type="Area2D" parent="." unique_id=1261922236]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Fire" unique_id=846033684]
+position = Vector2(0, -8)
+shape = SubResource("RectangleShape2D_s2jnl")
+
+[connection signal="body_entered" from="Hitbox" to="." method="_on_hitbox_body_entered"]
+[connection signal="body_entered" from="Fire" to="." method="_on_fire_body_entered"]
+[connection signal="body_exited" from="Fire" to="." method="_on_fire_body_exited"]

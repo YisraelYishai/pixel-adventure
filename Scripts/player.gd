@@ -18,12 +18,14 @@ var air_jump = 0
 var double_jumping = false
 var wall_sliding = false
 var slamming = false
-var hit = false
 var slam_effect = "nil"
 var slam_timer = 0.0
 var box_breakable = false
 var respawn_point: Vector2
 var fruits = 0
+var health = 3
+var is_hurt = false
+var knockback_force = 400
 
 @export_enum("1", "2", "3", "4") var player_character: String = "1"
 @onready var animator = $AnimatedSprite2D
@@ -34,6 +36,7 @@ func appear():
 	animator.scale = Vector2(0.3, 0.3)
 	animator_status = false
 	self.visible = true
+	self.velocity = Vector2.ZERO
 	animator.play("appearing")
 	await animator.animation_finished
 	animator.scale = Vector2(1.0, 1.0)
@@ -160,13 +163,15 @@ func _physics_process(delta: float) -> void:
 
 func update_animations():
 	# Handle Animations
-	if is_on_floor():
+	if is_on_floor() and !is_hurt:
 		if velocity.x == 0:
 			animator.animation = "idle" + player_character
 		else:
 			animator.animation = "run" + player_character
 	elif wall_sliding:
 		animator.play("wall_slide" + player_character)
+	elif is_hurt:
+		animator.play("hit" + player_character)
 	else:
 		if velocity.y < 0:
 			animator.animation = "jump" + player_character
@@ -181,7 +186,31 @@ func update_animations():
 
 func fruit_collected():
 	fruits += 1
-	
+
+func hit(enemy_position: Vector2):
+	if is_hurt: return
+
+	is_hurt = true
+	health -= 1
+
+	var knockback_dir = (global_position - enemy_position).normalized()
+	velocity = knockback_dir * knockback_force
+	print(velocity)
+	update_animations()
+
+	await get_tree().create_timer(0.2).timeout
+	is_hurt = false
+	update_animations()
+
+	if health <= 0:
+		death()
+
+func death():
+	self.set_collision_layer_value(1, false)
+	self.set_collision_layer_value(10, true)
+	self.set_collision_mask_value(2, false)
+	self.set_collision_mask_value(1, true)
+
 func out_of_bounds():
 	await get_tree().create_timer(0.5).timeout
 	respawn()
@@ -195,6 +224,7 @@ func new_respawn(respawn_position):
 	respawn_point = respawn_position
 	
 func respawn():
+	health = 3
 	self.position = respawn_point
 	appear()
 	await get_tree().create_timer(0.2).timeout
