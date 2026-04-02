@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://0wian6puvx84"]
+
+[ext_resource type="Script" uid="uid://bc2ob4b80kjse" path="res://Scripts/background.gd" id="1_pojwb"]
+[ext_resource type="Texture2D" uid="uid://bm855w7v01rlv" path="res://Assets/Pixel Adventure 1/Background/Green.png" id="2_4aqey"]
+
+[node name="Background" type="ParallaxBackground" unique_id=422274749]
+script = ExtResource("1_pojwb")
+
+[node name="ParallaxLayer" type="ParallaxLayer" parent="." unique_id=1827260351]
+motion_scale = Vector2(0, 0)
+motion_mirroring = Vector2(640, 320)
+
+[node name="BackgroundImg" type="TextureRect" parent="ParallaxLayer" unique_id=78880812]
+z_index = -10
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 800.0
+offset_bottom = 600.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_4aqey")
+stretch_mode = 1

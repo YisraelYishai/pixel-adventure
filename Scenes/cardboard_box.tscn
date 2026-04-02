@@ -1,0 +1,81 @@
+[gd_scene format=3 uid="uid://c85xojoxicl8q"]
+
+[ext_resource type="Script" uid="uid://cmfom24p5pkd5" path="res://Scripts/box.gd" id="1_2mlwd"]
+[ext_resource type="PackedScene" uid="uid://bgjqe64gavxbl" path="res://Scenes/box_piece.tscn" id="2_jj2x6"]
+[ext_resource type="Texture2D" uid="uid://dkym2i4nwvgsa" path="res://Assets/Pixel Adventure 1/Items/Boxes/Box2/Break.png" id="3_jj2x6"]
+[ext_resource type="Texture2D" uid="uid://b815yhwcb1jw6" path="res://Assets/Pixel Adventure 1/Items/Boxes/Box2/Hit (28x24).png" id="4_4cbca"]
+[ext_resource type="Texture2D" uid="uid://b8d1tvcmpeyon" path="res://Assets/Pixel Adventure 1/Items/Boxes/Box2/Idle1.png" id="5_n034m"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_c6m8y"]
+atlas = ExtResource("4_4cbca")
+region = Rect2(0, 0, 28, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nfxsk"]
+atlas = ExtResource("4_4cbca")
+region = Rect2(28, 0, 28, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_trtkw"]
+atlas = ExtResource("4_4cbca")
+region = Rect2(56, 0, 28, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5s71g"]
+atlas = ExtResource("4_4cbca")
+region = Rect2(84, 0, 28, 24)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_7ilgn"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_c6m8y")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nfxsk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_trtkw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5s71g")
+}],
+"loop": false,
+"name": &"hit1",
+"speed": 20.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_n034m")
+}],
+"loop": true,
+"name": &"idle1",
+"speed": 20.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_87qbb"]
+size = Vector2(20, 19)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2jyye"]
+size = Vector2(20, 4)
+
+[node name="CardboardBox" type="StaticBody2D" unique_id=237150342]
+collision_layer = 2
+script = ExtResource("1_2mlwd")
+broken_piece_scene = ExtResource("2_jj2x6")
+debris_spritesheet = ExtResource("3_jj2x6")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=614338348]
+sprite_frames = SubResource("SpriteFrames_7ilgn")
+animation = &"idle1"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=414142941]
+position = Vector2(0, 0.5)
+shape = SubResource("RectangleShape2D_87qbb")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=756006160]
+collision_layer = 2
+
+[node name="SlamDetector" type="CollisionShape2D" parent="Area2D" unique_id=1736147281]
+position = Vector2(0, -11)
+shape = SubResource("RectangleShape2D_2jyye")
+debug_color = Color(0.7032688, 0.4906841, 0, 0.41960785)
+
+[connection signal="body_entered" from="Area2D" to="." method="_on_area_2d_body_entered"]

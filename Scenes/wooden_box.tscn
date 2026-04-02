@@ -1,0 +1,74 @@
+[gd_scene format=3 uid="uid://dfb52lqdj2d8v"]
+
+[ext_resource type="Script" uid="uid://cmfom24p5pkd5" path="res://Scripts/box.gd" id="1_2jyye"]
+[ext_resource type="Texture2D" uid="uid://cevregnhse7au" path="res://Assets/Pixel Adventure 1/Items/Boxes/Box1/Hit (28x24).png" id="1_ego7h"]
+[ext_resource type="Texture2D" uid="uid://n4d7gqayoq3m" path="res://Assets/Pixel Adventure 1/Items/Boxes/Box1/Idle.png" id="2_2jyye"]
+[ext_resource type="PackedScene" uid="uid://bgjqe64gavxbl" path="res://Scenes/box_piece.tscn" id="2_y6vpp"]
+[ext_resource type="Texture2D" uid="uid://cgv6vbmjyvyq4" path="res://Assets/Pixel Adventure 1/Items/Boxes/Box1/Break.png" id="3_4dlq2"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_y6vpp"]
+atlas = ExtResource("1_ego7h")
+region = Rect2(0, 0, 28, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_y7274"]
+atlas = ExtResource("1_ego7h")
+region = Rect2(28, 0, 28, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4pvdy"]
+atlas = ExtResource("1_ego7h")
+region = Rect2(56, 0, 28, 24)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_7ilgn"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_y6vpp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_y7274")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4pvdy")
+}],
+"loop": false,
+"name": &"hit1",
+"speed": 20.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_2jyye")
+}],
+"loop": true,
+"name": &"idle1",
+"speed": 20.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_87qbb"]
+size = Vector2(20, 19)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2jyye"]
+size = Vector2(20, 4)
+
+[node name="WoodenBox" type="StaticBody2D" unique_id=237150342]
+collision_layer = 2
+script = ExtResource("1_2jyye")
+broken_piece_scene = ExtResource("2_y6vpp")
+debris_spritesheet = ExtResource("3_4dlq2")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=614338348]
+sprite_frames = SubResource("SpriteFrames_7ilgn")
+animation = &"idle1"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=414142941]
+position = Vector2(0, 0.5)
+shape = SubResource("RectangleShape2D_87qbb")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=756006160]
+collision_layer = 2
+
+[node name="SlamDetector" type="CollisionShape2D" parent="Area2D" unique_id=1736147281]
+position = Vector2(0, -11)
+shape = SubResource("RectangleShape2D_2jyye")
+debug_color = Color(0.7032688, 0.4906841, 0, 0.41960785)
+
+[connection signal="body_entered" from="Area2D" to="." method="_on_area_2d_body_entered"]

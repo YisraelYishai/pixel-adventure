@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://bgjqe64gavxbl"]
+
+[ext_resource type="Script" uid="uid://c8uuk0xryfppv" path="res://Scripts/box_piece.gd" id="1_4yklm"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_4yklm"]
+radius = 3.0
+
+[node name="BoxPiece" type="RigidBody2D" unique_id=123561361]
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("1_4yklm")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=575038226]
+hframes = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=79654292]
+position = Vector2(0, -1)
+shape = SubResource("CircleShape2D_4yklm")

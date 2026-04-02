@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://cstcmnf3f3qbw"]
+
+[ext_resource type="Script" uid="uid://bwcggwvtwpey3" path="res://Scripts/blocks_debris.gd" id="1_quer8"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_quer8"]
+friction = 0.2
+bounce = 0.4
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_quer8"]
+size = Vector2(16, 9)
+
+[node name="BlocksDebris" type="RigidBody2D" unique_id=65389737]
+collision_layer = 4
+collision_mask = 2
+physics_material_override = SubResource("PhysicsMaterial_quer8")
+script = ExtResource("1_quer8")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=348749839]
+
+[node name="Timer" type="Timer" parent="." unique_id=3934220]
+autostart = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2087299949]
+position = Vector2(0, -0.5)
+shape = SubResource("RectangleShape2D_quer8")
+
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]

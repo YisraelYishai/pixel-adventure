@@ -1,0 +1,79 @@
+[gd_scene format=3 uid="uid://coa6l5lkjrr10"]
+
+[ext_resource type="Texture2D" uid="uid://bfam2uyh0k4p2" path="res://Assets/Pixel Adventure 1/Traps/Falling Platforms/On (32x10).png" id="1_0msxf"]
+[ext_resource type="Texture2D" uid="uid://dwtmnk32sancv" path="res://Assets/Pixel Adventure 1/Traps/Falling Platforms/Off.png" id="2_lx48v"]
+[ext_resource type="Script" uid="uid://cmpf3fw7btijw" path="res://Scripts/falling_platform.gd" id="3_lx48v"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0tybl"]
+atlas = ExtResource("1_0msxf")
+region = Rect2(0, 0, 32, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vmp38"]
+atlas = ExtResource("1_0msxf")
+region = Rect2(32, 0, 32, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_w8xmc"]
+atlas = ExtResource("1_0msxf")
+region = Rect2(64, 0, 32, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vwptf"]
+atlas = ExtResource("1_0msxf")
+region = Rect2(96, 0, 32, 10)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_i5gyj"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0tybl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vmp38")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_w8xmc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vwptf")
+}],
+"loop": true,
+"name": &"default",
+"speed": 20.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_lx48v")
+}],
+"loop": false,
+"name": &"falling",
+"speed": 20.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hvjnw"]
+size = Vector2(32, 6)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lx48v"]
+size = Vector2(30, 2)
+
+[node name="FallingPlatform" type="AnimatedSprite2D" unique_id=1974783609]
+sprite_frames = SubResource("SpriteFrames_i5gyj")
+animation = &"falling"
+autoplay = "default"
+script = ExtResource("3_lx48v")
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1314633823]
+collision_layer = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=1381823322]
+position = Vector2(0, -2)
+shape = SubResource("RectangleShape2D_hvjnw")
+one_way_collision = true
+debug_color = Color(3.465414e-06, 0.5964637, 0.7218088, 0.41960785)
+
+[node name="Area2D" type="Area2D" parent="." unique_id=219225821]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=764600174]
+position = Vector2(0, -6)
+shape = SubResource("RectangleShape2D_lx48v")
+debug_color = Color(0.62536424, 0.5323642, 0, 0.41960785)
+
+[connection signal="body_entered" from="Area2D" to="." method="_on_area_2d_body_entered"]

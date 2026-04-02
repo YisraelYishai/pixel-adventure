@@ -1,0 +1,67 @@
+[gd_scene format=3 uid="uid://j6i6msk0bpbt"]
+
+[ext_resource type="Script" uid="uid://cmfom24p5pkd5" path="res://Scripts/box.gd" id="1_ycnpk"]
+[ext_resource type="PackedScene" uid="uid://bgjqe64gavxbl" path="res://Scenes/box_piece.tscn" id="2_gqr7u"]
+[ext_resource type="Texture2D" uid="uid://cdvi05b7oer13" path="res://Assets/Pixel Adventure 1/Items/Boxes/Box3/Break.png" id="3_ycnpk"]
+[ext_resource type="Texture2D" uid="uid://cnhk48yli50dr" path="res://Assets/Pixel Adventure 1/Items/Boxes/Box3/Hit (28x24).png" id="4_gqr7u"]
+[ext_resource type="Texture2D" uid="uid://cfo32gbsi4egu" path="res://Assets/Pixel Adventure 1/Items/Boxes/Box3/Idle3.png" id="5_juga2"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_uk2v5"]
+atlas = ExtResource("4_gqr7u")
+region = Rect2(0, 0, 28, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hdvxo"]
+atlas = ExtResource("4_gqr7u")
+region = Rect2(28, 0, 28, 24)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_7ilgn"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uk2v5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hdvxo")
+}],
+"loop": false,
+"name": &"hit1",
+"speed": 20.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_juga2")
+}],
+"loop": true,
+"name": &"idle1",
+"speed": 20.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_87qbb"]
+size = Vector2(20, 19)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2jyye"]
+size = Vector2(20, 4)
+
+[node name="MetalBox" type="StaticBody2D" unique_id=237150342]
+collision_layer = 2
+script = ExtResource("1_ycnpk")
+broken_piece_scene = ExtResource("2_gqr7u")
+debris_spritesheet = ExtResource("3_ycnpk")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=614338348]
+sprite_frames = SubResource("SpriteFrames_7ilgn")
+animation = &"idle1"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=414142941]
+position = Vector2(0, 0.5)
+shape = SubResource("RectangleShape2D_87qbb")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=756006160]
+collision_layer = 2
+
+[node name="SlamDetector" type="CollisionShape2D" parent="Area2D" unique_id=1736147281]
+position = Vector2(0, -11)
+shape = SubResource("RectangleShape2D_2jyye")
+debug_color = Color(0.7032688, 0.4906841, 0, 0.41960785)
+
+[connection signal="body_entered" from="Area2D" to="." method="_on_area_2d_body_entered"]

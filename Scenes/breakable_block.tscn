@@ -1,0 +1,112 @@
+[gd_scene format=3 uid="uid://b5sgnfl7ykse4"]
+
+[ext_resource type="Script" uid="uid://n8204iqa0l2d" path="res://Scripts/breakable_block.gd" id="1_op2hc"]
+[ext_resource type="Texture2D" uid="uid://b3qsg137qt5x1" path="res://Assets/Pixel Adventure 1/Traps/Blocks/IdleB.png" id="1_siljs"]
+[ext_resource type="Texture2D" uid="uid://cyfxe63xmu24t" path="res://Assets/Pixel Adventure 1/Traps/Blocks/HitSide (22x22).png" id="2_op2hc"]
+[ext_resource type="Texture2D" uid="uid://bvtci7ge8dtp1" path="res://Assets/Pixel Adventure 1/Traps/Blocks/HitTop (22x22).png" id="3_m6bek"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7x1g1"]
+atlas = ExtResource("2_op2hc")
+region = Rect2(0, 0, 22, 22)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ud6pq"]
+atlas = ExtResource("2_op2hc")
+region = Rect2(22, 0, 22, 22)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shgdf"]
+atlas = ExtResource("2_op2hc")
+region = Rect2(44, 0, 22, 22)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_op2hc"]
+atlas = ExtResource("3_m6bek")
+region = Rect2(0, 0, 22, 22)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_m6bek"]
+atlas = ExtResource("3_m6bek")
+region = Rect2(22, 0, 22, 22)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_beklp"]
+atlas = ExtResource("3_m6bek")
+region = Rect2(44, 0, 22, 22)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_cvjd2"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_siljs")
+}],
+"loop": true,
+"name": &"default",
+"speed": 20.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7x1g1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ud6pq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_shgdf")
+}, {
+"duration": 1.0,
+"texture": ExtResource("1_siljs")
+}],
+"loop": false,
+"name": &"hit_side",
+"speed": 20.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_op2hc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_m6bek")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_beklp")
+}, {
+"duration": 1.0,
+"texture": ExtResource("1_siljs")
+}],
+"loop": false,
+"name": &"hit_top",
+"speed": 20.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_dv1xo"]
+size = Vector2(12, 14)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_m6bek"]
+size = Vector2(10, 2)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_op2hc"]
+size = Vector2(10, 2)
+
+[node name="BreakableBlock" type="StaticBody2D" unique_id=2063605572]
+collision_layer = 2
+script = ExtResource("1_op2hc")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=762527203]
+sprite_frames = SubResource("SpriteFrames_cvjd2")
+autoplay = "default"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=712549155]
+shape = SubResource("RectangleShape2D_dv1xo")
+
+[node name="HitboxBottom" type="Area2D" parent="." unique_id=1065091234]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HitboxBottom" unique_id=297828048]
+position = Vector2(0, 8)
+shape = SubResource("RectangleShape2D_m6bek")
+debug_color = Color(0.6776306, 0.5055443, 3.85046e-07, 0.41960785)
+
+[node name="HitboxTop" type="Area2D" parent="." unique_id=737775351]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HitboxTop" unique_id=1372814780]
+position = Vector2(0, -8)
+shape = SubResource("RectangleShape2D_op2hc")
+debug_color = Color(0.6776306, 0.5055443, 3.85046e-07, 0.41960785)
+
+[connection signal="body_entered" from="HitboxBottom" to="." method="_on_hitbox_bottom_body_entered"]
+[connection signal="body_entered" from="HitboxTop" to="." method="_on_hitbox_top_body_entered"]

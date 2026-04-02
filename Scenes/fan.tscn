@@ -1,0 +1,76 @@
+[gd_scene format=3 uid="uid://cm31ok0y30l5c"]
+
+[ext_resource type="Script" uid="uid://kwxd3adhqb4q" path="res://Scripts/fan.gd" id="1_j6bxr"]
+[ext_resource type="Texture2D" uid="uid://db564vr8vfx88" path="res://Assets/Pixel Adventure 1/Traps/Fan/Off.png" id="1_nfiji"]
+[ext_resource type="Texture2D" uid="uid://c68to86kr3ky5" path="res://Assets/Pixel Adventure 1/Traps/Fan/On (24x8).png" id="2_j6bxr"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bbowg"]
+atlas = ExtResource("2_j6bxr")
+region = Rect2(0, 0, 24, 8)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rn3eh"]
+atlas = ExtResource("2_j6bxr")
+region = Rect2(24, 0, 24, 8)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jvs0n"]
+atlas = ExtResource("2_j6bxr")
+region = Rect2(48, 0, 24, 8)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d27k1"]
+atlas = ExtResource("2_j6bxr")
+region = Rect2(72, 0, 24, 8)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_r4ku6"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_nfiji")
+}],
+"loop": true,
+"name": &"Off",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bbowg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rn3eh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jvs0n")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d27k1")
+}],
+"loop": true,
+"name": &"On",
+"speed": 20.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_nfiji"]
+size = Vector2(24, 8)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_j6bxr"]
+size = Vector2(16, 164)
+
+[node name="Fan" type="StaticBody2D" unique_id=1597304167]
+collision_layer = 2
+script = ExtResource("1_j6bxr")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1576295242]
+sprite_frames = SubResource("SpriteFrames_r4ku6")
+animation = &"Off"
+frame_progress = 0.32430673
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=196167044]
+shape = SubResource("RectangleShape2D_nfiji")
+
+[node name="Detector" type="Area2D" parent="." unique_id=1445826553]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Detector" unique_id=1588332355]
+position = Vector2(0, -82)
+shape = SubResource("RectangleShape2D_j6bxr")
+debug_color = Color(0.6839485, 0.50199497, 0, 0.41960785)
+
+[connection signal="body_entered" from="Detector" to="." method="_on_detector_body_entered"]
