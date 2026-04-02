@@ -51,8 +51,8 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_nfiji"]
 size = Vector2(24, 8)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_j6bxr"]
-size = Vector2(16, 164)
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_j6bxr"]
+height = 164.0
 
 [node name="Fan" type="StaticBody2D" unique_id=1597304167]
 collision_layer = 2
@@ -60,8 +60,8 @@ script = ExtResource("1_j6bxr")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1576295242]
 sprite_frames = SubResource("SpriteFrames_r4ku6")
-animation = &"Off"
-frame_progress = 0.32430673
+animation = &"On"
+autoplay = "On"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=196167044]
 shape = SubResource("RectangleShape2D_nfiji")
@@ -70,7 +70,8 @@ shape = SubResource("RectangleShape2D_nfiji")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Detector" unique_id=1588332355]
 position = Vector2(0, -82)
-shape = SubResource("RectangleShape2D_j6bxr")
+shape = SubResource("CapsuleShape2D_j6bxr")
 debug_color = Color(0.6839485, 0.50199497, 0, 0.41960785)
 
 [connection signal="body_entered" from="Detector" to="." method="_on_detector_body_entered"]
+[connection signal="body_exited" from="Detector" to="." method="_on_detector_body_exited"]
