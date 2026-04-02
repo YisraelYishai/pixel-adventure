@@ -39,7 +39,7 @@ func _on_area_2d_body_entered(body: Node2D) -> void:
 		if not has_fallen: return
 
 		fall_tween = create_tween().set_trans(Tween.TRANS_SINE)
-		fall_tween.tween_property(self, "global_position", global_position + Vector2(0, 250), 1.0)
+		fall_tween.tween_property(self, "global_position", global_position + Vector2(0, 500), 1.0)
 		fall_tween.finished.connect(destroy)
 
 func destroy():

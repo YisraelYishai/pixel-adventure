@@ -7,11 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://14loqnh75c1e" path="res://Scenes/end.tscn" id="7_5wyu1"]
 [ext_resource type="PackedScene" uid="uid://coa6l5lkjrr10" path="res://Scenes/falling_platform.tscn" id="8_0c07c"]
 [ext_resource type="PackedScene" uid="uid://bmx1upcenjtym" path="res://Scenes/start.tscn" id="9_2cgwh"]
-[ext_resource type="PackedScene" uid="uid://b5sgnfl7ykse4" path="res://Scenes/breakable_block.tscn" id="9_yb21e"]
-[ext_resource type="PackedScene" uid="uid://c85xojoxicl8q" path="res://Scenes/cardboard_box.tscn" id="10_aees8"]
 [ext_resource type="PackedScene" uid="uid://crvawuljcpo1h" path="res://Scenes/checkpoint.tscn" id="10_mie3u"]
-[ext_resource type="PackedScene" uid="uid://j6i6msk0bpbt" path="res://Scenes/metal_box.tscn" id="11_mie3u"]
-[ext_resource type="PackedScene" uid="uid://dletb80tbxvu6" path="res://Scenes/arrow.tscn" id="12_0qy5o"]
 [ext_resource type="PackedScene" uid="uid://cm31ok0y30l5c" path="res://Scenes/fan.tscn" id="13_aees8"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ys1qc"]
@@ -320,28 +316,13 @@ position = Vector2(639, 256)
 
 [node name="Node" type="Node" parent="." unique_id=1624995517]
 
-[node name="Checkpoint" parent="Node" unique_id=1403191903 instance=ExtResource("10_mie3u")]
-position = Vector2(374, 224)
-
-[node name="Checkpoint2" parent="Node" unique_id=958204341 instance=ExtResource("10_mie3u")]
-position = Vector2(1106, 144)
-
-[node name="FallingPlatform" parent="Node" unique_id=1974783609 instance=ExtResource("8_0c07c")]
-position = Vector2(302, 207)
-
-[node name="BreakableBlock" parent="Node" unique_id=2063605572 instance=ExtResource("9_yb21e")]
-position = Vector2(448, 188)
-
-[node name="CardboardBox" parent="Node" unique_id=237150342 instance=ExtResource("10_aees8")]
-position = Vector2(495, 278)
-
-[node name="MetalBox" parent="Node" unique_id=1538584652 instance=ExtResource("11_mie3u")]
-position = Vector2(550, 278)
-
-[node name="Arrow" parent="Node" unique_id=46550751 instance=ExtResource("12_0qy5o")]
-position = Vector2(736, 256)
-
 [node name="Fan" parent="Node" unique_id=1597304167 instance=ExtResource("13_aees8")]
 position = Vector2(224, 253)
+
+[node name="Checkpoint" parent="Node" unique_id=1403191903 instance=ExtResource("10_mie3u")]
+position = Vector2(368, 224)
+
+[node name="FallingPlatform" parent="Node" unique_id=1974783609 instance=ExtResource("8_0c07c")]
+position = Vector2(303, 206)
 
 [connection signal="body_entered" from="WorldBoundary" to="." method="_on_world_boundary_body_entered"]
