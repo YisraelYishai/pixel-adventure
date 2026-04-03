@@ -59,4 +59,3 @@ func respawn():
 	self.play("default")
 	
 	show()
-	Global.fade_in(self)

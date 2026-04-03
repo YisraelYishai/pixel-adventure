@@ -283,11 +283,12 @@ script = ExtResource("1_ys1qc")
 metadata/_edit_vertical_guides_ = [0.0]
 
 [node name="Background" parent="." unique_id=422274749 instance=ExtResource("2_aees8")]
+background_image = "Purple"
 
 [node name="Player" parent="." unique_id=1577230936 instance=ExtResource("2_qc4db")]
 unique_name_in_owner = true
 position = Vector2(128, 240)
-player_character = "4"
+player_character = "3"
 
 [node name="DebugLabel" type="Label" parent="Player" unique_id=153925843]
 offset_left = -128.0
@@ -317,9 +318,6 @@ position = Vector2(639, 256)
 
 [node name="Node" type="Node" parent="." unique_id=1624995517]
 
-[node name="Fan" parent="Node" unique_id=1597304167 instance=ExtResource("13_aees8")]
-position = Vector2(224, 253)
-
 [node name="Checkpoint" parent="Node" unique_id=1403191903 instance=ExtResource("10_mie3u")]
 position = Vector2(368, 224)
 
@@ -340,5 +338,12 @@ position = Vector2(481, 273)
 
 [node name="Fire5" parent="Node" unique_id=98392465 instance=ExtResource("10_iaow0")]
 position = Vector2(497, 273)
+
+[node name="Fan2" parent="Node" unique_id=1935176056 instance=ExtResource("13_aees8")]
+position = Vector2(225, 253)
+
+[node name="Fire7" parent="Node" unique_id=1264833190 instance=ExtResource("10_iaow0")]
+position = Vector2(177, 281)
+rotation = -1.5707964
 
 [connection signal="body_entered" from="WorldBoundary" to="." method="_on_world_boundary_body_entered"]
