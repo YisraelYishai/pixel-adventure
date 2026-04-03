@@ -947,7 +947,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"hit1",
-"speed": 20.0
+"speed": 15.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -973,7 +973,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"hit2",
-"speed": 20.0
+"speed": 15.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -999,7 +999,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"hit3",
-"speed": 20.0
+"speed": 15.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -1025,7 +1025,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"hit4",
-"speed": 20.0
+"speed": 15.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -1480,7 +1480,7 @@ script = ExtResource("2_f1ek2")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=423751178]
 sprite_frames = SubResource("SpriteFrames_mie3u")
-animation = &"idle2"
+animation = &"hit4"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=938850867]
 position = Vector2(0, 4)

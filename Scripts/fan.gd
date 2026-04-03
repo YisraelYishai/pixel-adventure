@@ -4,7 +4,7 @@ extends StaticBody2D
 @onready var collision_shape: CollisionShape2D = $Detector/CollisionShape2D
 
 const MAX_FAN_STRENGTH = 25.0
-const MAX_UPWARD_SPEED = -300.0
+const MAX_UPWARD_SPEED = -150.0
 
 var player: CharacterBody2D = null
 var is_colliding = false

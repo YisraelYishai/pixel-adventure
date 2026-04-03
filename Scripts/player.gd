@@ -14,6 +14,7 @@ const SLAM_VELOCITY = 1100.0
 const SLAM_PAUSE_TIME = 0.3
 
 var animator_status: bool = true
+var can_move: bool = true
 var air_jump = 0
 var double_jumping = false
 var wall_sliding = false
@@ -24,8 +25,9 @@ var box_breakable = false
 var respawn_point: Vector2
 var fruits = 0
 var health = 3
+var respawning: bool
 var is_hurt = false
-var knockback_force = 400
+var knockback_force = 500
 
 @export_enum("1", "2", "3", "4") var player_character: String = "1"
 @onready var animator = $AnimatedSprite2D
@@ -63,29 +65,32 @@ func _ready() -> void:
 	new_respawn($"../InitialSpawnPlayer".position)
 
 func _physics_process(delta: float) -> void:
+	# DebugLabel
+	$DebugLabel.text = "Health: " + str(health)
+	
 	# Slam Cooldown
 	if slam_timer > 0:
 		slam_timer -= delta
 	
 	# Add the gravity.
-	if not is_on_floor() and animator_status and !slamming:
+	if not is_on_floor() and !slamming:
 		velocity += get_gravity() * delta
 
 	# Handle jump
-	if is_on_floor():
+	if is_on_floor() and can_move:
 		air_jump = 0
 		if Input.is_action_pressed("jump") and air_jump < 1 and !slamming:
 			air_jump += 1
 			velocity.y = JUMP_VELOCITY
 	else:
-		if Input.is_action_just_pressed("jump") and air_jump < 2 and !wall_sliding and animator_status:
+		if Input.is_action_just_pressed("jump") and air_jump < 2 and !wall_sliding and animator_status and can_move:
 			air_jump += 1
 			double_jumping = true
 			update_animations()
 			velocity.y = JUMP_VELOCITY + 100
 	
 	# Handle Wall Jump
-	if Input.is_action_just_pressed("jump") and is_on_wall():
+	if Input.is_action_just_pressed("jump") and is_on_wall() and can_move:
 		if Input.is_action_pressed("right"):
 			velocity.y = JUMP_VELOCITY
 			velocity.x = -WALL_JUMP_VELOCITY
@@ -95,7 +100,7 @@ func _physics_process(delta: float) -> void:
 		air_jump += 1
 		
 	# Handle Wall Sliding
-	if is_on_wall() and !is_on_floor():
+	if is_on_wall() and !is_on_floor() and can_move:
 		if Input.is_action_pressed("right") or Input.is_action_pressed("left"):
 			wall_sliding = true
 		else:
@@ -109,7 +114,7 @@ func _physics_process(delta: float) -> void:
 
 	# Handle Slam
 	if Input.is_action_just_pressed("slam"):
-		if !is_on_floor() and !slamming and slam_timer <= 0:
+		if !is_on_floor() and !slamming and slam_timer <= 0 and can_move:
 			slamming = true
 			box_breakable = true
 			if air_jump == 1:
@@ -145,17 +150,18 @@ func _physics_process(delta: float) -> void:
 	var direction := Input.get_axis("left", "right")
 	var target_velocity = direction * SPEED
 
-	if direction != 0 and !slamming:
+	if direction != 0 and !slamming and can_move:
 		velocity.x = move_toward(velocity.x, target_velocity, ACCELERATION * delta)
 	else:
 		velocity.x = move_toward(velocity.x, 0, FRICTION * delta)
 		
 	# Handle Flip
-	if direction == 1:
-		animator.flip_h = false
-	elif direction == -1:
-		animator.flip_h = true
-
+	if can_move:
+		if direction == 1:
+			animator.flip_h = false
+		elif direction == -1:
+			animator.flip_h = true
+	
 	move_and_slide()
 
 	if animator_status:
@@ -188,6 +194,8 @@ func fruit_collected():
 	fruits += 1
 
 func hit(enemy_position: Vector2):
+	$DebugLabel.add_theme_color_override("font_color", Color.RED)
+	
 	if is_hurt: return
 
 	is_hurt = true
@@ -195,21 +203,29 @@ func hit(enemy_position: Vector2):
 
 	var knockback_dir = (global_position - enemy_position).normalized()
 	velocity = knockback_dir * knockback_force
-	print(velocity)
+	cam.apply_shake(2)
 	update_animations()
 
 	await get_tree().create_timer(0.2).timeout
 	is_hurt = false
 	update_animations()
-
+	
+	$DebugLabel.add_theme_color_override("font_color", Color.WHITE)
+	
 	if health <= 0:
 		death()
 
 func death():
-	self.set_collision_layer_value(1, false)
-	self.set_collision_layer_value(10, true)
-	self.set_collision_mask_value(2, false)
-	self.set_collision_mask_value(1, true)
+	respawning = true
+	z_index = 5
+	collision_layer = 0
+	collision_mask = 0
+	can_move = false
+	animator.play("idle" + player_character)
+	animator_status = false
+	var tween = create_tween().set_parallel(true)
+	tween.tween_property(self, "rotation_degrees", 45, 1.5)
+	tween.finished.connect(respawn)
 
 func out_of_bounds():
 	await get_tree().create_timer(0.5).timeout
@@ -224,8 +240,15 @@ func new_respawn(respawn_position):
 	respawn_point = respawn_position
 	
 func respawn():
+	respawning = true
 	health = 3
+	rotation_degrees = 0
+	z_index = 1
+	set_collision_layer_value(1, true)
+	set_collision_mask_value(2, true)
 	self.position = respawn_point
 	appear()
+	can_move = true
 	await get_tree().create_timer(0.2).timeout
 	Global.respawn_objects.emit()
+	respawning = false
