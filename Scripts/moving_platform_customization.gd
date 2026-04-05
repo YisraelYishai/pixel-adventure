@@ -2,8 +2,8 @@ extends Path2D
 
 @export_enum("Platform1", "Platform2") var PlatformType: String = "Platform1"
 @export var max_speed: float = 75.0
-@export var chain_texture: Texture2D
 
+var chain_texture: Texture2D = preload("res://Assets/Pixel Adventure 1/Traps/Platforms/Chain.png")
 var spacing: float = 16.0
 
 @onready var chain_container: Node2D = $ChainContainer
@@ -14,7 +14,6 @@ func _ready():
 
 
 func generate_chain():
-	# Clear old chains
 	for child in chain_container.get_children():
 		child.queue_free()
 
@@ -22,6 +21,8 @@ func generate_chain():
 	var distance = 0.0
 
 	while distance < length:
+		print("Distance: ", distance)
+		print("Spacing: ", spacing)
 		var pos = curve.sample_baked(distance)
 
 		var chain = Sprite2D.new()
