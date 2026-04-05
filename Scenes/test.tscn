@@ -278,9 +278,21 @@ sources/0 = SubResource("TileSetAtlasSource_ys1qc")
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_qc4db"]
 
-[sub_resource type="Curve2D" id="Curve2D_yb21e"]
+[sub_resource type="Curve2D" id="Curve2D_iaow0"]
 _data = {
 "points": PackedVector2Array(0, 0, 0, 0, -1, 39, 0, 0, 0, 0, 138, 39)
+}
+point_count = 2
+
+[sub_resource type="Curve2D" id="Curve2D_qpfo2"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, -1, 39, 0, 0, 0, 0, 138, 39)
+}
+point_count = 2
+
+[sub_resource type="Curve2D" id="Curve2D_yb21e"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, -1, 39, 0, 0, 0, 0, -1, -55)
 }
 point_count = 2
 
@@ -343,7 +355,7 @@ position = Vector2(481, 273)
 position = Vector2(497, 273)
 
 [node name="Fan2" parent="Node" unique_id=1935176056 instance=ExtResource("13_aees8")]
-position = Vector2(225, 253)
+position = Vector2(549, 285)
 
 [node name="Fire7" parent="Node" unique_id=1264833190 instance=ExtResource("10_iaow0")]
 position = Vector2(177, 281)
@@ -351,6 +363,15 @@ rotation = -1.5707964
 
 [node name="Moving Platform" parent="Node" unique_id=361562352 instance=ExtResource("10_qpfo2")]
 position = Vector2(413, 109)
+curve = SubResource("Curve2D_iaow0")
+PlatformType = "Platform2"
+
+[node name="Moving Platform2" parent="Node" unique_id=869628814 instance=ExtResource("10_qpfo2")]
+position = Vector2(640, 109)
+curve = SubResource("Curve2D_qpfo2")
+
+[node name="Moving Platform3" parent="Node" unique_id=672994093 instance=ExtResource("10_qpfo2")]
+position = Vector2(842, 109)
 curve = SubResource("Curve2D_yb21e")
 PlatformType = "Platform2"
 

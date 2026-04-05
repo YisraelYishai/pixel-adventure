@@ -28,6 +28,7 @@ var health = 3
 var respawning: bool
 var is_hurt = false
 var knockback_force = 500
+var can_fall_through = false
 
 @export_enum("1", "2", "3", "4") var player_character: String = "1"
 @onready var animator = $AnimatedSprite2D
@@ -114,6 +115,11 @@ func _physics_process(delta: float) -> void:
 
 	# Handle Slam
 	if Input.is_action_just_pressed("slam"):
+		if can_fall_through:
+			set_collision_mask_value(2, false)
+			await get_tree().create_timer(0.25).timeout
+			set_collision_mask_value(2, true)
+			return
 		if !is_on_floor() and !slamming and slam_timer <= 0 and can_move:
 			slamming = true
 			box_breakable = true

@@ -1,8 +1,9 @@
 [gd_scene format=3 uid="uid://brqm0s7i8xchw"]
 
-[ext_resource type="Script" uid="uid://bnyunur0qga4s" path="res://Scenes/moving_platform_customization.gd" id="1_0773j"]
+[ext_resource type="Script" uid="uid://bnyunur0qga4s" path="res://Scripts/moving_platform_customization.gd" id="1_0773j"]
 [ext_resource type="Script" uid="uid://ci1q5jafcrb31" path="res://Scripts/moving_platform.gd" id="1_anqd2"]
 [ext_resource type="Texture2D" uid="uid://ds3ioux1v3cwm" path="res://Assets/Pixel Adventure 1/Traps/Platforms/Grey Off.png" id="2_tdwu5"]
+[ext_resource type="Texture2D" uid="uid://ddkayt8w38nu" path="res://Assets/Pixel Adventure 1/Traps/Platforms/Chain.png" id="2_vn2ta"]
 [ext_resource type="Texture2D" uid="uid://dfo3sacx44r2i" path="res://Assets/Pixel Adventure 1/Traps/Platforms/Grey On (32x8).png" id="3_tdwu5"]
 [ext_resource type="Texture2D" uid="uid://oytcqioofxt7" path="res://Assets/Pixel Adventure 1/Traps/Platforms/Brown Off.png" id="5_yx365"]
 [ext_resource type="Texture2D" uid="uid://pw4d5u8h5ga2" path="res://Assets/Pixel Adventure 1/Traps/Platforms/Brown On (32x8).png" id="6_vn2ta"]
@@ -152,10 +153,13 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_yx365"]
-size = Vector2(32, 2)
+size = Vector2(40, 10)
 
 [node name="Moving Platform" type="Path2D" unique_id=361562352]
 script = ExtResource("1_0773j")
+chain_texture = ExtResource("2_vn2ta")
+
+[node name="ChainContainer" type="Node2D" parent="." unique_id=1458619844]
 
 [node name="PathFollow2D" type="PathFollow2D" parent="." unique_id=873276055]
 rotates = false
@@ -178,7 +182,8 @@ animation = &"Platform2_off"
 [node name="Detector" type="Area2D" parent="PathFollow2D/StaticBody2D" unique_id=1985091675]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PathFollow2D/StaticBody2D/Detector" unique_id=759022476]
-position = Vector2(0, -3)
+process_physics_priority = 1
+position = Vector2(0, -1)
 shape = SubResource("RectangleShape2D_yx365")
 
 [connection signal="body_entered" from="PathFollow2D/StaticBody2D/Detector" to="PathFollow2D" method="_on_detector_body_entered"]
