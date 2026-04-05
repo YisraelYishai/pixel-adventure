@@ -26,11 +26,11 @@ func _physics_process(_delta: float) -> void:
 	if is_colliding and player:
 		var distance = global_position.distance_to(player.global_position)
 		
-		var max_range = 100.0
+		var max_range = 150.0
 		if collision_shape.shape is CircleShape2D:
 			max_range = collision_shape.shape.radius
 		elif collision_shape.shape is RectangleShape2D:
-			max_range = collision_shape.shape.size.y # Or size.x depending on orientation
+			max_range = collision_shape.shape.size.y
 		
 		var intensity = clamp(1.0 - (distance / max_range), 0.0, 1.0)
 		

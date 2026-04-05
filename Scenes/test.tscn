@@ -5,10 +5,10 @@
 [ext_resource type="PackedScene" uid="uid://bcyip4ow0l61y" path="res://Scenes/player.tscn" id="2_qc4db"]
 [ext_resource type="Texture2D" uid="uid://b7jjlop6dsypp" path="res://Assets/Pixel Adventure 1/Terrain/Terrain (16x16).png" id="3_qc4db"]
 [ext_resource type="PackedScene" uid="uid://14loqnh75c1e" path="res://Scenes/end.tscn" id="7_5wyu1"]
-[ext_resource type="PackedScene" uid="uid://coa6l5lkjrr10" path="res://Scenes/falling_platform.tscn" id="8_0c07c"]
 [ext_resource type="PackedScene" uid="uid://bmx1upcenjtym" path="res://Scenes/start.tscn" id="9_2cgwh"]
 [ext_resource type="PackedScene" uid="uid://dx07dx2beago5" path="res://Scenes/fire.tscn" id="10_iaow0"]
 [ext_resource type="PackedScene" uid="uid://crvawuljcpo1h" path="res://Scenes/checkpoint.tscn" id="10_mie3u"]
+[ext_resource type="PackedScene" uid="uid://brqm0s7i8xchw" path="res://Scenes/moving_platform.tscn" id="10_qpfo2"]
 [ext_resource type="PackedScene" uid="uid://cm31ok0y30l5c" path="res://Scenes/fan.tscn" id="13_aees8"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ys1qc"]
@@ -278,6 +278,12 @@ sources/0 = SubResource("TileSetAtlasSource_ys1qc")
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_qc4db"]
 
+[sub_resource type="Curve2D" id="Curve2D_yb21e"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, -1, 39, 0, 0, 0, 0, 138, 39)
+}
+point_count = 2
+
 [node name="Test" type="Node2D" unique_id=2114643290]
 script = ExtResource("1_ys1qc")
 metadata/_edit_vertical_guides_ = [0.0]
@@ -321,9 +327,6 @@ position = Vector2(639, 256)
 [node name="Checkpoint" parent="Node" unique_id=1403191903 instance=ExtResource("10_mie3u")]
 position = Vector2(368, 224)
 
-[node name="FallingPlatform" parent="Node" unique_id=1974783609 instance=ExtResource("8_0c07c")]
-position = Vector2(303, 206)
-
 [node name="Fire" parent="Node" unique_id=538522475 instance=ExtResource("10_iaow0")]
 position = Vector2(433, 273)
 
@@ -345,5 +348,10 @@ position = Vector2(225, 253)
 [node name="Fire7" parent="Node" unique_id=1264833190 instance=ExtResource("10_iaow0")]
 position = Vector2(177, 281)
 rotation = -1.5707964
+
+[node name="Moving Platform" parent="Node" unique_id=361562352 instance=ExtResource("10_qpfo2")]
+position = Vector2(413, 109)
+curve = SubResource("Curve2D_yb21e")
+PlatformType = "Platform2"
 
 [connection signal="body_entered" from="WorldBoundary" to="." method="_on_world_boundary_body_entered"]

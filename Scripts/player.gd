@@ -144,7 +144,7 @@ func _physics_process(delta: float) -> void:
 	# Handle Reload
 	if Input.is_action_just_pressed("reload") and is_on_floor():
 		await disappear()
-		respawn()
+		respawn(false)
 	
 	# Get the input direction and handle the movement/deceleration.
 	var direction := Input.get_axis("left", "right")
@@ -229,7 +229,7 @@ func death():
 
 func out_of_bounds():
 	await get_tree().create_timer(0.5).timeout
-	respawn()
+	respawn(true)
 
 func end():
 	await disappear()
@@ -239,9 +239,10 @@ func end():
 func new_respawn(respawn_position):
 	respawn_point = respawn_position
 	
-func respawn():
+func respawn(health_refill = true):
 	respawning = true
-	health = 3
+	if health_refill:
+		health = 3
 	rotation_degrees = 0
 	z_index = 1
 	set_collision_layer_value(1, true)
