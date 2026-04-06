@@ -1,5 +1,5 @@
-extends CharacterBody2D
 class_name Player
+extends CharacterBody2D
 
 '''To-Do: 
 	NIL'''
@@ -12,6 +12,8 @@ const WALL_JUMP_VELOCITY = 150.0
 const WALL_SLIDE_GRAVITY = 90.0
 const SLAM_VELOCITY = 1100.0
 const SLAM_PAUSE_TIME = 0.3
+
+@export_enum("1", "2", "3", "4") var player_character: String = "1"
 
 var animator_status: bool = true
 var can_move: bool = true
@@ -30,33 +32,9 @@ var is_hurt = false
 var knockback_force = 500
 var can_fall_through = false
 
-@export_enum("1", "2", "3", "4") var player_character: String = "1"
 @onready var animator = $AnimatedSprite2D
 @onready var cam = $Camera2D
 
-func appear():
-	call_deferred("set_physics_process", false)
-	animator.scale = Vector2(0.3, 0.3)
-	animator_status = false
-	self.visible = true
-	self.velocity = Vector2.ZERO
-	animator.play("appearing")
-	await animator.animation_finished
-	animator.scale = Vector2(1.0, 1.0)
-	animator.play("idle" + player_character)
-	call_deferred("set_physics_process", true)
-	animator_status = true
-	
-func disappear():
-	call_deferred("set_physics_process", false)
-	self.visible = false
-	animator.scale = Vector2(0.3, 0.3)
-	animator_status = false
-	self.visible = true
-	animator.play("disappearing")
-	await animator.animation_finished
-	animator.scale = Vector2(1.0, 1.0)
-	self.visible = false
 
 func _ready() -> void:
 	self.visible = false
@@ -65,14 +43,15 @@ func _ready() -> void:
 	appear()
 	new_respawn($"../InitialSpawnPlayer".position)
 
+
 func _physics_process(delta: float) -> void:
 	# DebugLabel
 	$DebugLabel.text = "Health: " + str(health)
-	
+
 	# Slam Cooldown
 	if slam_timer > 0:
 		slam_timer -= delta
-	
+
 	# Add the gravity.
 	if not is_on_floor() and !slamming:
 		velocity += get_gravity() * delta
@@ -89,7 +68,7 @@ func _physics_process(delta: float) -> void:
 			double_jumping = true
 			update_animations()
 			velocity.y = JUMP_VELOCITY + 100
-	
+
 	# Handle Wall Jump
 	if Input.is_action_just_pressed("jump") and is_on_wall() and can_move:
 		if Input.is_action_pressed("right"):
@@ -99,7 +78,7 @@ func _physics_process(delta: float) -> void:
 			velocity.y = JUMP_VELOCITY
 			velocity.x = WALL_JUMP_VELOCITY
 		air_jump += 1
-		
+
 	# Handle Wall Sliding
 	if is_on_wall() and !is_on_floor() and can_move:
 		if Input.is_action_pressed("right") or Input.is_action_pressed("left"):
@@ -108,7 +87,7 @@ func _physics_process(delta: float) -> void:
 			wall_sliding = false
 	else:
 		wall_sliding = false
-		
+
 	if wall_sliding:
 		velocity.y += (WALL_SLIDE_GRAVITY * delta)
 		velocity.y = min(velocity.y, WALL_SLIDE_GRAVITY)
@@ -137,7 +116,7 @@ func _physics_process(delta: float) -> void:
 	if slamming and is_on_floor():
 		slamming = false
 		slam_timer = 0.6
-		
+
 		if slam_effect == "jump":
 			cam.apply_shake(3)
 		elif slam_effect == "double_jump":
@@ -145,13 +124,13 @@ func _physics_process(delta: float) -> void:
 		await get_tree().create_timer(0.3).timeout
 		slam_effect = "nil"
 		box_breakable = false
-		cam.offset = Vector2(0,0)
-	
+		cam.offset = Vector2(0, 0)
+
 	# Handle Reload
 	if Input.is_action_just_pressed("reload") and is_on_floor():
 		await disappear()
 		respawn(false)
-	
+
 	# Get the input direction and handle the movement/deceleration.
 	var direction := Input.get_axis("left", "right")
 	var target_velocity = direction * SPEED
@@ -160,18 +139,45 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, target_velocity, ACCELERATION * delta)
 	else:
 		velocity.x = move_toward(velocity.x, 0, FRICTION * delta)
-		
+
 	# Handle Flip
 	if can_move:
 		if direction == 1:
 			animator.flip_h = false
 		elif direction == -1:
 			animator.flip_h = true
-	
+
 	move_and_slide()
 
 	if animator_status:
 		update_animations()
+
+
+func appear():
+	call_deferred("set_physics_process", false)
+	animator.scale = Vector2(0.3, 0.3)
+	animator_status = false
+	self.visible = true
+	self.velocity = Vector2.ZERO
+	animator.play("appearing")
+	await animator.animation_finished
+	animator.scale = Vector2(1.0, 1.0)
+	animator.play("idle" + player_character)
+	call_deferred("set_physics_process", true)
+	animator_status = true
+
+
+func disappear():
+	call_deferred("set_physics_process", false)
+	self.visible = false
+	animator.scale = Vector2(0.3, 0.3)
+	animator_status = false
+	self.visible = true
+	animator.play("disappearing")
+	await animator.animation_finished
+	animator.scale = Vector2(1.0, 1.0)
+	self.visible = false
+
 
 func update_animations():
 	# Handle Animations
@@ -196,13 +202,16 @@ func update_animations():
 			animator.animation = "fall" + player_character
 		pass
 
+
 func fruit_collected():
 	fruits += 1
 
+
 func hit(enemy_position: Vector2):
 	$DebugLabel.add_theme_color_override("font_color", Color.RED)
-	
-	if is_hurt: return
+
+	if is_hurt:
+		return
 
 	is_hurt = true
 	health -= 1
@@ -215,11 +224,12 @@ func hit(enemy_position: Vector2):
 	await get_tree().create_timer(0.2).timeout
 	is_hurt = false
 	update_animations()
-	
+
 	$DebugLabel.add_theme_color_override("font_color", Color.WHITE)
-	
+
 	if health <= 0:
 		death()
+
 
 func death():
 	respawning = true
@@ -233,18 +243,22 @@ func death():
 	tween.tween_property(self, "rotation_degrees", 45, 1.5)
 	tween.finished.connect(respawn)
 
+
 func out_of_bounds():
 	await get_tree().create_timer(0.5).timeout
 	respawn(true)
+
 
 func end():
 	await disappear()
 	get_tree().reload_current_scene()
 	# Change it to next scene
-	
+
+
 func new_respawn(respawn_position):
 	respawn_point = respawn_position
-	
+
+
 func respawn(health_refill = true):
 	respawning = true
 	if health_refill:
