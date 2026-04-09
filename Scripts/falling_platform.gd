@@ -6,7 +6,7 @@ var initial_y: float
 var has_fallen := false
 var fall_tween: Tween
 var weight := 0.0
-var max_weight := 0.8
+var max_weight := 0.5
 var weight_build_speed := 2.0
 var player_on_top := false
 

@@ -13,6 +13,7 @@ const WALL_SLIDE_GRAVITY = 90.0
 const SLAM_VELOCITY = 1100.0
 const SLAM_PAUSE_TIME = 0.3
 
+@export_category("Player Settings")
 @export_enum("1", "2", "3", "4") var player_character: String = "1"
 
 var animator_status: bool = true
@@ -267,6 +268,7 @@ func respawn(health_refill = true):
 	z_index = 1
 	set_collision_layer_value(1, true)
 	set_collision_mask_value(2, true)
+	set_collision_mask_value(4, true)
 	self.position = respawn_point
 	appear()
 	can_move = true

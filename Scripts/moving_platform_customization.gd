@@ -21,8 +21,6 @@ func generate_chain():
 	var distance = 0.0
 
 	while distance < length:
-		print("Distance: ", distance)
-		print("Spacing: ", spacing)
 		var pos = curve.sample_baked(distance)
 
 		var chain = Sprite2D.new()

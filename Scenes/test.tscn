@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" uid="uid://crvawuljcpo1h" path="res://Scenes/checkpoint.tscn" id="10_mie3u"]
 [ext_resource type="PackedScene" uid="uid://brqm0s7i8xchw" path="res://Scenes/moving_platform.tscn" id="10_qpfo2"]
 [ext_resource type="PackedScene" uid="uid://coa6l5lkjrr10" path="res://Scenes/falling_platform.tscn" id="11_qpfo2"]
+[ext_resource type="PackedScene" uid="uid://7vradrkdpg5k" path="res://Scenes/rock_head.tscn" id="12_yb21e"]
 [ext_resource type="PackedScene" uid="uid://cm31ok0y30l5c" path="res://Scenes/fan.tscn" id="13_aees8"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ys1qc"]
@@ -297,6 +298,12 @@ _data = {
 }
 point_count = 2
 
+[sub_resource type="Curve2D" id="Curve2D_aees8"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, -3, 27, 0, 0, 0, 0, -3, 144)
+}
+point_count = 2
+
 [node name="Test" type="Node2D" unique_id=2114643290]
 script = ExtResource("1_ys1qc")
 metadata/_edit_vertical_guides_ = [0.0]
@@ -378,5 +385,9 @@ PlatformType = "Platform2"
 
 [node name="FallingPlatform" parent="Node" unique_id=1974783609 instance=ExtResource("11_qpfo2")]
 position = Vector2(303, 213)
+
+[node name="Rock Head" parent="Node" unique_id=486142408 instance=ExtResource("12_yb21e")]
+position = Vector2(54, 131)
+curve = SubResource("Curve2D_aees8")
 
 [connection signal="body_entered" from="WorldBoundary" to="." method="_on_world_boundary_body_entered"]

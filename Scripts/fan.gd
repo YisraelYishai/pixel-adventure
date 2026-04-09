@@ -23,7 +23,7 @@ func _ready() -> void:
 		fan_direction = Vector2(1, 0)
 
 func _physics_process(_delta: float) -> void:
-	if is_colliding and player:
+	if is_colliding and player and player.slamming == false:
 		var distance = global_position.distance_to(player.global_position)
 		
 		var max_range = 150.0

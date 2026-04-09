@@ -1461,7 +1461,7 @@ size = Vector2(18, 24)
 
 [node name="Player" type="CharacterBody2D" unique_id=1577230936]
 z_index = 2
-collision_mask = 2
+collision_mask = 10
 script = ExtResource("1_cvnsp")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=230452763]
