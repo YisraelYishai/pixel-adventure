@@ -179,6 +179,9 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_kq732")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_n05pm")
 }],
 "loop": false,
 "name": &"top_hit",
@@ -189,12 +192,13 @@ animations = [{
 size = Vector2(33, 33)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_tr6vy"]
-size = Vector2(6, 34)
+size = Vector2(35, 32)
 
 [node name="Rock Head" type="Path2D" unique_id=83675468]
+script = ExtResource("1_n05pm")
 
 [node name="PathFollow2D" type="PathFollow2D" parent="." unique_id=2132968617]
-script = ExtResource("1_n05pm")
+rotates = false
 
 [node name="AnimatableBody2D" type="AnimatableBody2D" parent="PathFollow2D" unique_id=486142408]
 collision_layer = 8
@@ -202,12 +206,9 @@ sync_to_physics = false
 script = ExtResource("1_tr6vy")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="PathFollow2D/AnimatableBody2D" unique_id=236516251]
-rotation = -1.5707964
 sprite_frames = SubResource("SpriteFrames_nusac")
-animation = &"blink"
+animation = &"idle"
 autoplay = "idle"
-frame = 3
-frame_progress = 1.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PathFollow2D/AnimatableBody2D" unique_id=74184069]
 position = Vector2(-0.5, -0.5)
@@ -216,7 +217,9 @@ shape = SubResource("RectangleShape2D_mepox")
 [node name="Hitbox" type="Area2D" parent="PathFollow2D/AnimatableBody2D" unique_id=444152025]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PathFollow2D/AnimatableBody2D/Hitbox" unique_id=258185303]
-position = Vector2(17, -1.4210855e-14)
+process_priority = 1
+process_physics_priority = 1
+position = Vector2(1.5, 0)
 shape = SubResource("RectangleShape2D_tr6vy")
 debug_color = Color(1, 0, 0, 0.41960785)
 

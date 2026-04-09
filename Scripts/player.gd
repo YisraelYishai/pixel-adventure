@@ -215,6 +215,7 @@ func hit(enemy_position: Vector2):
 		return
 
 	is_hurt = true
+	set_collision_mask_value(4, false)
 	health -= 1
 
 	var knockback_dir = (global_position - enemy_position).normalized()
@@ -223,7 +224,10 @@ func hit(enemy_position: Vector2):
 	update_animations()
 
 	await get_tree().create_timer(0.2).timeout
+	
 	is_hurt = false
+	
+	set_collision_mask_value(4, true)
 	update_animations()
 
 	$DebugLabel.add_theme_color_override("font_color", Color.WHITE)
