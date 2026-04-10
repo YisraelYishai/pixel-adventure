@@ -7,7 +7,7 @@ func _ready() -> void:
 
 func _on_body_entered(body: Node2D) -> void:
 	if body.slamming == false:
-		body.cam.apply_shake(1)
+		body.cam.screen_shake(2, 2)
 		body.velocity.y = -450
 		body.air_jump += 1
 	$AnimatedSprite2D.play("hit")

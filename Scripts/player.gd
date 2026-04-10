@@ -72,9 +72,16 @@ func _physics_process(delta: float) -> void:
 	if is_on_floor() and can_move:
 		air_jump = 0
 		if Input.is_action_pressed("jump") and air_jump < 1 and !slamming:
+			var_jump_applied = false
+			released_jump_key = false
 			air_jump += 1
 			velocity.y = jump_velocity
 	else:
+		if !released_jump_key and !Input.is_action_pressed("jump") and !slamming:
+			released_jump_key = true
+		if released_jump_key and !var_jump_applied and velocity.y < 0.0 and velocity.y > VAR_JUMP_HEIGHT:
+			velocity.y *= 0.5
+			var_jump_applied = true
 		if Input.is_action_just_pressed("jump") and air_jump < 2 and !wall_sliding and animator_status and can_move:
 			air_jump += 1
 			double_jumping = true
@@ -131,9 +138,9 @@ func _physics_process(delta: float) -> void:
 		slam_timer = 0.6
 
 		if slam_effect == "jump":
-			cam.apply_shake(3)
+			cam.screen_shake(3, 1.5)
 		elif slam_effect == "double_jump":
-			cam.apply_shake(7)
+			cam.screen_shake(5, 2)
 		await get_tree().create_timer(0.3).timeout
 		slam_effect = "nil"
 		box_breakable = false
@@ -268,7 +275,7 @@ func hit(enemy_position: Vector2):
 
 	var knockback_dir = (global_position - enemy_position).normalized()
 	velocity = knockback_dir * knockback_force
-	cam.apply_shake(2)
+	cam.screen_shake(2, 2)
 	update_animations()
 
 	await get_tree().create_timer(0.2).timeout
