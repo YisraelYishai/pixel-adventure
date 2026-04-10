@@ -32,6 +32,9 @@
 [ext_resource type="Texture2D" uid="uid://ckrabe7rusdsq" path="res://Assets/Pixel Adventure 1/Main Characters/Pink Man/Run (32x32).png" id="27_7ldla"]
 [ext_resource type="Texture2D" uid="uid://c4pukps5upqjn" path="res://Assets/Pixel Adventure 1/Main Characters/Ninja Frog/Wall Jump (32x32).png" id="30_r7t2e"]
 [ext_resource type="Texture2D" uid="uid://bsecndjglm126" path="res://Assets/Pixel Adventure 1/Main Characters/Pink Man/Wall Jump (32x32).png" id="31_nmr2m"]
+[ext_resource type="Texture2D" uid="uid://b8uu8fj4444n2" path="res://Assets/Pixel Adventure 1/Traps/Sand Mud Ice/Sand Particle.png" id="33_nv4vc"]
+[ext_resource type="Texture2D" uid="uid://byorfb6gccv4d" path="res://Assets/Pixel Adventure 1/Traps/Sand Mud Ice/Mud Particle.png" id="34_8gxox"]
+[ext_resource type="Texture2D" uid="uid://daia38bnio167" path="res://Assets/Pixel Adventure 1/Traps/Sand Mud Ice/Ice Particle.png" id="35_11gg7"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_qpa8y"]
 atlas = ExtResource("3_gymyn")
@@ -1459,6 +1462,31 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_v0iea"]
 size = Vector2(18, 24)
 
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_qpa8y"]
+particle_flag_disable_z = true
+direction = Vector3(0, 0, 0)
+spread = 30.0
+initial_velocity_min = 30.0
+initial_velocity_max = 40.0
+gravity = Vector3(0, 200, 0)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_sbwqj"]
+particle_flag_disable_z = true
+direction = Vector3(0, 0, 0)
+spread = 20.0
+initial_velocity_min = 60.0
+initial_velocity_max = 60.0
+gravity = Vector3(0, 300, 0)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_xwi16"]
+lifetime_randomness = 0.4
+particle_flag_disable_z = true
+direction = Vector3(0, 0, 0)
+spread = 60.0
+initial_velocity_min = 80.0
+initial_velocity_max = 80.0
+gravity = Vector3(0, 100, 0)
+
 [node name="Player" type="CharacterBody2D" unique_id=1577230936]
 z_index = 2
 collision_mask = 10
@@ -1486,3 +1514,28 @@ animation = &"idle3"
 position = Vector2(0, 4)
 shape = SubResource("RectangleShape2D_v0iea")
 debug_color = Color(0, 0.6, 0.69803923, 0)
+
+[node name="Particles" type="Marker2D" parent="." unique_id=1994106595]
+visible = false
+position = Vector2(0, 15)
+
+[node name="SandParticles2D" type="GPUParticles2D" parent="Particles" unique_id=1080462704]
+amount = 20
+texture = ExtResource("33_nv4vc")
+lifetime = 0.4
+explosiveness = 0.8
+process_material = SubResource("ParticleProcessMaterial_qpa8y")
+
+[node name="MudParticles2D" type="GPUParticles2D" parent="Particles" unique_id=414268127]
+amount = 20
+texture = ExtResource("34_8gxox")
+lifetime = 0.4
+explosiveness = 0.8
+process_material = SubResource("ParticleProcessMaterial_sbwqj")
+
+[node name="IceParticles2D" type="GPUParticles2D" parent="Particles" unique_id=830730655]
+amount = 20
+texture = ExtResource("35_11gg7")
+lifetime = 0.4
+explosiveness = 0.8
+process_material = SubResource("ParticleProcessMaterial_xwi16")

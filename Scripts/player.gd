@@ -2,23 +2,30 @@ class_name Player
 extends CharacterBody2D
 
 '''To-Do: 
-	NIL'''
+	Finish particles'''
 
-const SPEED = 200.0
-const ACCELERATION = 800.0
-const FRICTION = 700.0
-const JUMP_VELOCITY = -400.0
+const BASE_SPEED = 200.0
+const BASE_ACCELERATION = 800.0
+const BASE_FRICTION = 700.0
+const BASE_JUMP_VELOCITY = -400.0
 const WALL_JUMP_VELOCITY = 150.0
 const WALL_SLIDE_GRAVITY = 90.0
 const SLAM_VELOCITY = 1100.0
 const SLAM_PAUSE_TIME = 0.3
+const VAR_JUMP_HEIGHT = BASE_JUMP_VELOCITY + 100
 
 @export_category("Player Settings")
 @export_enum("1", "2", "3", "4") var player_character: String = "1"
 
+var speed = 200.0
+var acceleration = 800.0
+var friction = 700.0
+var jump_velocity = -400.0
 var animator_status: bool = true
 var can_move: bool = true
 var air_jump = 0
+var var_jump_applied: bool = false
+var released_jump_key: bool = false
 var double_jumping = false
 var wall_sliding = false
 var slamming = false
@@ -32,6 +39,10 @@ var respawning: bool
 var is_hurt = false
 var knockback_force = 500
 var can_fall_through = false
+var current_surface := "default"
+var ice_momentum := 0.0
+var air_control := 1.0
+var was_on_floor := false
 
 @onready var animator = $AnimatedSprite2D
 @onready var cam = $Camera2D
@@ -40,9 +51,9 @@ var can_fall_through = false
 func _ready() -> void:
 	self.visible = false
 	await get_tree().create_timer(0.3).timeout
-	self.position = $"../InitialSpawnPlayer".position
+	self.position = %InitialSpawnPlayer.position
 	appear()
-	new_respawn($"../InitialSpawnPlayer".position)
+	new_respawn(%InitialSpawnPlayer.position)
 
 
 func _physics_process(delta: float) -> void:
@@ -53,7 +64,7 @@ func _physics_process(delta: float) -> void:
 	if slam_timer > 0:
 		slam_timer -= delta
 
-	# Add the gravity.
+	# Add the gravity
 	if not is_on_floor() and !slamming:
 		velocity += get_gravity() * delta
 
@@ -62,21 +73,21 @@ func _physics_process(delta: float) -> void:
 		air_jump = 0
 		if Input.is_action_pressed("jump") and air_jump < 1 and !slamming:
 			air_jump += 1
-			velocity.y = JUMP_VELOCITY
+			velocity.y = jump_velocity
 	else:
 		if Input.is_action_just_pressed("jump") and air_jump < 2 and !wall_sliding and animator_status and can_move:
 			air_jump += 1
 			double_jumping = true
 			update_animations()
-			velocity.y = JUMP_VELOCITY + 100
+			velocity.y = jump_velocity + 100
 
 	# Handle Wall Jump
 	if Input.is_action_just_pressed("jump") and is_on_wall() and can_move:
 		if Input.is_action_pressed("right"):
-			velocity.y = JUMP_VELOCITY
+			velocity.y = jump_velocity
 			velocity.x = -WALL_JUMP_VELOCITY
 		if Input.is_action_pressed("left"):
-			velocity.y = JUMP_VELOCITY
+			velocity.y = jump_velocity
 			velocity.x = WALL_JUMP_VELOCITY
 		air_jump += 1
 
@@ -99,6 +110,7 @@ func _physics_process(delta: float) -> void:
 			set_collision_mask_value(2, false)
 			await get_tree().create_timer(0.25).timeout
 			set_collision_mask_value(2, true)
+			can_fall_through = false
 			return
 		if !is_on_floor() and !slamming and slam_timer <= 0 and can_move:
 			slamming = true
@@ -134,13 +146,37 @@ func _physics_process(delta: float) -> void:
 
 	# Get the input direction and handle the movement/deceleration.
 	var direction := Input.get_axis("left", "right")
-	var target_velocity = direction * SPEED
 
-	if direction != 0 and !slamming and can_move:
-		velocity.x = move_toward(velocity.x, target_velocity, ACCELERATION * delta)
+	if current_surface == "ice":
+		if direction != 0:
+			ice_momentum = move_toward(ice_momentum, direction * speed, acceleration * delta)
+		else:
+			ice_momentum = move_toward(ice_momentum, 0, friction * 0.2 * delta)
+
+		velocity.x = ice_momentum
+
 	else:
-		velocity.x = move_toward(velocity.x, 0, FRICTION * delta)
+		var target_velocity = direction * speed
 
+		if direction != 0 and !slamming and can_move:
+			velocity.x = move_toward(velocity.x, target_velocity, acceleration * delta)
+		else:
+			velocity.x = move_toward(velocity.x, 0, friction * delta)
+
+		ice_momentum = velocity.x
+
+		if not is_on_floor():
+			if current_surface == "mud":
+				air_control = 0.5
+
+		if direction != 0 and !slamming and can_move:
+			velocity.x = move_toward(
+				velocity.x,
+				target_velocity,
+				acceleration * air_control * delta,
+			)
+		else:
+			velocity.x = move_toward(velocity.x, 0, friction * delta)
 	# Handle Flip
 	if can_move:
 		if direction == 1:
@@ -150,9 +186,21 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 
+	# Handle Different Terrains
+	var surface = get_surface_type()
+	apply_surface_effects(surface)
+
+	update_particles(current_surface)
+
 	if animator_status:
 		update_animations()
+	
+	# Landing detection
+	if not was_on_floor and is_on_floor():
+		if abs(velocity.y) > 250:
+			trigger_landing_particles()
 
+	was_on_floor = is_on_floor()
 
 func appear():
 	call_deferred("set_physics_process", false)
@@ -224,9 +272,9 @@ func hit(enemy_position: Vector2):
 	update_animations()
 
 	await get_tree().create_timer(0.2).timeout
-	
+
 	is_hurt = false
-	
+
 	set_collision_mask_value(4, true)
 	update_animations()
 
@@ -279,3 +327,95 @@ func respawn(health_refill = true):
 	await get_tree().create_timer(0.2).timeout
 	Global.respawn_objects.emit()
 	respawning = false
+
+
+func get_surface_type() -> String:
+	if not is_on_floor():
+		return current_surface
+
+	for i in get_slide_collision_count():
+		var collision = get_slide_collision(i)
+
+		if collision.get_normal().y < -0.7:
+			if collision.get_collider() is TileMapLayer:
+				var layer = collision.get_collider()
+				var tile_pos = layer.local_to_map(collision.get_position())
+				var tile_data = layer.get_cell_tile_data(tile_pos)
+
+				if tile_data:
+					current_surface = tile_data.get_custom_data("surface_type")
+					return current_surface
+
+	return current_surface
+
+
+func apply_surface_effects(surface: String) -> void:
+	speed = BASE_SPEED
+	acceleration = BASE_ACCELERATION
+	friction = BASE_FRICTION
+	jump_velocity = BASE_JUMP_VELOCITY
+
+	match surface:
+		"sand":
+			speed = 140
+			acceleration = 400
+			friction = 950
+		"mud":
+			speed = 100
+			acceleration = 400
+			friction = 1200
+			jump_velocity = -300
+		"ice":
+			speed = 220
+			acceleration = 200
+			friction = 20
+		"one_way":
+			can_fall_through = true
+
+
+func update_particles(surface: String):
+	var moving: bool = abs(velocity.x) > 20 and is_on_floor()
+	
+	if surface == "sand" and moving:
+		if randi() % 6 == 0:
+			$Particles/SandParticles2D.restart()
+	else:
+		$Particles/SandParticles2D.emitting = false
+	
+	$Particles/MudParticles2D.emitting = surface == "mud" and moving
+	
+	$Particles/IceParticles2D.emitting = surface == "ice" and abs(velocity.x) > 80
+	
+	if moving:
+		set_particle_direction($Particles/SandParticles2D)
+		set_particle_direction($Particles/MudParticles2D)
+		set_particle_direction($Particles/IceParticles2D)
+
+
+func set_particle_direction(particles: GPUParticles2D):
+	var dir = sign(velocity.x)
+
+	if dir == 0:
+		return
+
+	var mat = particles.process_material as ParticleProcessMaterial
+
+	if mat:
+		mat.direction = Vector3(-dir, -0.3, 0)
+
+func trigger_landing_particles():
+	match current_surface:
+		"mud":
+			$Particles/MudParticles2D.restart()
+			var original_amount = $MudParticles.amount
+			$Particles/MudParticles2D.amount = 40
+			$Particles/MudParticles2D.restart()
+			$Particles/MudParticles2D.amount = original_amount
+			
+		"sand":
+			$Particles/SandParticles2D.restart()
+			$Particles/SandParticles2D.amount = 25
+			
+		"ice":
+			$Particles/IceParticles2D.restart()
+			$Particles/IceParticles2D.amount = 20
