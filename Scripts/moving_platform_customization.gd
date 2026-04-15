@@ -1,5 +1,6 @@
 extends Path2D
 
+@export_category("Preferences")
 @export_enum("Platform1", "Platform2") var PlatformType: String = "Platform1"
 @export var max_speed: float = 75.0
 

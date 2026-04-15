@@ -1464,28 +1464,56 @@ size = Vector2(18, 24)
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_qpa8y"]
 particle_flag_disable_z = true
-direction = Vector3(0, 0, 0)
-spread = 30.0
-initial_velocity_min = 30.0
-initial_velocity_max = 40.0
-gravity = Vector3(0, 200, 0)
+direction = Vector3(0, -0.5, 0)
+spread = 50.0
+initial_velocity_min = 55.0
+initial_velocity_max = 60.0
+gravity = Vector3(0, 250, 0)
+scale_min = 0.29999998
+scale_max = 0.5
+
+[sub_resource type="Curve" id="Curve_nv4vc"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.6), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_8gxox"]
+curve = SubResource("Curve_nv4vc")
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_sbwqj"]
 particle_flag_disable_z = true
-direction = Vector3(0, 0, 0)
-spread = 20.0
-initial_velocity_min = 60.0
-initial_velocity_max = 60.0
+angle_min = -89.99999
+angle_max = 90.000015
+direction = Vector3(0, -0.7, 0)
+spread = 100.0
+initial_velocity_min = 80.0
+initial_velocity_max = 90.0
 gravity = Vector3(0, 300, 0)
+tangential_accel_min = -2.2351742e-06
+tangential_accel_max = 99.99999
+damping_min = 100.00001
+damping_max = 100.00001
+scale_min = 0.7
+scale_curve = SubResource("CurveTexture_8gxox")
+
+[sub_resource type="Curve" id="Curve_8gxox"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_11gg7"]
+curve = SubResource("Curve_8gxox")
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_xwi16"]
-lifetime_randomness = 0.4
 particle_flag_disable_z = true
+emission_shape = 1
+emission_sphere_radius = 4.0
 direction = Vector3(0, 0, 0)
-spread = 60.0
-initial_velocity_min = 80.0
-initial_velocity_max = 80.0
-gravity = Vector3(0, 100, 0)
+spread = 0.0
+initial_velocity_min = 50.0
+initial_velocity_max = 50.0
+gravity = Vector3(0, 20, 0)
+scale_min = 0.5
+scale_max = 0.5
+scale_curve = SubResource("CurveTexture_11gg7")
 
 [node name="Player" type="CharacterBody2D" unique_id=1577230936]
 z_index = 2
@@ -1508,7 +1536,7 @@ script = ExtResource("2_f1ek2")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=423751178]
 sprite_frames = SubResource("SpriteFrames_mie3u")
-animation = &"idle3"
+animation = &"idle4"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=938850867]
 position = Vector2(0, 4)
@@ -1516,26 +1544,28 @@ shape = SubResource("RectangleShape2D_v0iea")
 debug_color = Color(0, 0.6, 0.69803923, 0)
 
 [node name="Particles" type="Marker2D" parent="." unique_id=1994106595]
-visible = false
 position = Vector2(0, 15)
 
 [node name="SandParticles2D" type="GPUParticles2D" parent="Particles" unique_id=1080462704]
-amount = 20
+emitting = false
 texture = ExtResource("33_nv4vc")
 lifetime = 0.4
 explosiveness = 0.8
 process_material = SubResource("ParticleProcessMaterial_qpa8y")
 
 [node name="MudParticles2D" type="GPUParticles2D" parent="Particles" unique_id=414268127]
-amount = 20
+visible = false
+emitting = false
+amount = 3
 texture = ExtResource("34_8gxox")
-lifetime = 0.4
-explosiveness = 0.8
+lifetime = 0.2
+explosiveness = 0.6
 process_material = SubResource("ParticleProcessMaterial_sbwqj")
 
 [node name="IceParticles2D" type="GPUParticles2D" parent="Particles" unique_id=830730655]
-amount = 20
+emitting = false
+amount = 5
 texture = ExtResource("35_11gg7")
 lifetime = 0.4
-explosiveness = 0.8
+explosiveness = 0.6
 process_material = SubResource("ParticleProcessMaterial_xwi16")

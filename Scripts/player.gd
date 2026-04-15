@@ -1,18 +1,17 @@
 class_name Player
 extends CharacterBody2D
 
-'''To-Do: 
-	Finish particles'''
+'''To-Do:
+	Adjust values of particles for better visuals during landing'''
 
-const BASE_SPEED = 200.0
-const BASE_ACCELERATION = 800.0
-const BASE_FRICTION = 700.0
+const BASE_SPEED = 175.0
+const BASE_ACCELERATION = 750.0
+const BASE_FRICTION = 500.0
 const BASE_JUMP_VELOCITY = -400.0
-const WALL_JUMP_VELOCITY = 150.0
-const WALL_SLIDE_GRAVITY = 90.0
+const BASE_WALL_JUMP_VELOCITY = 150.0
+const BASE_WALL_SLIDE_GRAVITY = 90.0
 const SLAM_VELOCITY = 1100.0
 const SLAM_PAUSE_TIME = 0.3
-const VAR_JUMP_HEIGHT = BASE_JUMP_VELOCITY + 100
 
 @export_category("Player Settings")
 @export_enum("1", "2", "3", "4") var player_character: String = "1"
@@ -21,6 +20,8 @@ var speed = 200.0
 var acceleration = 800.0
 var friction = 700.0
 var jump_velocity = -400.0
+var wall_jump_velocity = 150.0
+var wall_slide_gravity = 90.0
 var animator_status: bool = true
 var can_move: bool = true
 var air_jump = 0
@@ -40,15 +41,24 @@ var is_hurt = false
 var knockback_force = 500
 var can_fall_through = false
 var current_surface := "default"
+var current_wall_surface := "default"
+var cached_surface := "default"
+var floor_surface := "default"
 var ice_momentum := 0.0
 var air_control := 1.0
 var was_on_floor := false
+var is_bouncing: bool = false
 
 @onready var animator = $AnimatedSprite2D
 @onready var cam = $Camera2D
+@onready var sand_particles_2d: GPUParticles2D = $Particles/SandParticles2D
+@onready var mud_particles_2d: GPUParticles2D = $Particles/MudParticles2D
+@onready var ice_particles_2d: GPUParticles2D = $Particles/IceParticles2D
+@onready var tile_map_layer: TileMapLayer = %TileMapLayer
 
 
 func _ready() -> void:
+	call_deferred("set_physics_process", false)
 	self.visible = false
 	await get_tree().create_timer(0.3).timeout
 	self.position = %InitialSpawnPlayer.position
@@ -59,19 +69,29 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	# DebugLabel
 	$DebugLabel.text = "Health: " + str(health)
-
 	# Slam Cooldown
 	if slam_timer > 0:
 		slam_timer -= delta
+
+	# Handle Terrains
+	var detected_surface = get_surface_type()
+	current_wall_surface = get_wall_surface_type()
+	current_surface = detected_surface if detected_surface != "default" else current_surface
+	apply_surface_effects(current_surface, current_wall_surface)
+	update_particles(floor_surface)
 
 	# Add the gravity
 	if not is_on_floor() and !slamming:
 		velocity += get_gravity() * delta
 
+	# Check Bounce for Trampoline
+	if is_on_ceiling() or velocity.y > 0:
+		is_bouncing = false
+
 	# Handle jump
 	if is_on_floor() and can_move:
 		air_jump = 0
-		if Input.is_action_pressed("jump") and air_jump < 1 and !slamming:
+		if Input.is_action_just_pressed("jump") and air_jump < 1 and !slamming:
 			var_jump_applied = false
 			released_jump_key = false
 			air_jump += 1
@@ -79,9 +99,12 @@ func _physics_process(delta: float) -> void:
 	else:
 		if !released_jump_key and !Input.is_action_pressed("jump") and !slamming:
 			released_jump_key = true
-		if released_jump_key and !var_jump_applied and velocity.y < 0.0 and velocity.y > VAR_JUMP_HEIGHT:
-			velocity.y *= 0.5
-			var_jump_applied = true
+
+		if released_jump_key and !var_jump_applied and velocity.y < 0.0:
+			if not is_bouncing:
+				velocity.y *= 0.5
+				var_jump_applied = true
+
 		if Input.is_action_just_pressed("jump") and air_jump < 2 and !wall_sliding and animator_status and can_move:
 			air_jump += 1
 			double_jumping = true
@@ -92,15 +115,19 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed("jump") and is_on_wall() and can_move:
 		if Input.is_action_pressed("right"):
 			velocity.y = jump_velocity
-			velocity.x = -WALL_JUMP_VELOCITY
+			velocity.x = -wall_jump_velocity
 		if Input.is_action_pressed("left"):
 			velocity.y = jump_velocity
-			velocity.x = WALL_JUMP_VELOCITY
+			velocity.x = wall_jump_velocity
 		air_jump += 1
 
 	# Handle Wall Sliding
+	var direction := Input.get_axis("left", "right")
+
 	if is_on_wall() and !is_on_floor() and can_move:
-		if Input.is_action_pressed("right") or Input.is_action_pressed("left"):
+		var normal = get_wall_normal()
+
+		if direction != 0 and sign(direction) == -sign(normal.x):
 			wall_sliding = true
 		else:
 			wall_sliding = false
@@ -108,8 +135,8 @@ func _physics_process(delta: float) -> void:
 		wall_sliding = false
 
 	if wall_sliding:
-		velocity.y += (WALL_SLIDE_GRAVITY * delta)
-		velocity.y = min(velocity.y, WALL_SLIDE_GRAVITY)
+		velocity.y += (wall_slide_gravity * delta)
+		velocity.y = min(velocity.y, wall_slide_gravity)
 
 	# Handle Slam
 	if Input.is_action_just_pressed("slam"):
@@ -140,7 +167,7 @@ func _physics_process(delta: float) -> void:
 		if slam_effect == "jump":
 			cam.screen_shake(3, 1.5)
 		elif slam_effect == "double_jump":
-			cam.screen_shake(5, 2)
+			cam.screen_shake(4, 1.5)
 		await get_tree().create_timer(0.3).timeout
 		slam_effect = "nil"
 		box_breakable = false
@@ -152,9 +179,7 @@ func _physics_process(delta: float) -> void:
 		respawn(false)
 
 	# Get the input direction and handle the movement/deceleration.
-	var direction := Input.get_axis("left", "right")
-
-	if current_surface == "ice":
+	if current_surface == "ice" or cached_surface == "ice":
 		if direction != 0:
 			ice_momentum = move_toward(ice_momentum, direction * speed, acceleration * delta)
 		else:
@@ -172,6 +197,8 @@ func _physics_process(delta: float) -> void:
 
 		ice_momentum = velocity.x
 
+		air_control = 1.0
+
 		if not is_on_floor():
 			if current_surface == "mud":
 				air_control = 0.5
@@ -184,6 +211,7 @@ func _physics_process(delta: float) -> void:
 			)
 		else:
 			velocity.x = move_toward(velocity.x, 0, friction * delta)
+
 	# Handle Flip
 	if can_move:
 		if direction == 1:
@@ -191,25 +219,31 @@ func _physics_process(delta: float) -> void:
 		elif direction == -1:
 			animator.flip_h = true
 
+	var fall_speed = velocity.y
+
 	move_and_slide()
-
-	# Handle Different Terrains
-	var surface = get_surface_type()
-	apply_surface_effects(surface)
-
-	update_particles(current_surface)
 
 	if animator_status:
 		update_animations()
-	
-	# Landing detection
+
+	# Landing detection and Ice Cancel
+	if is_on_wall():
+		var wall_normal = get_wall_normal()
+		if sign(ice_momentum) == -sign(wall_normal.x):
+			ice_momentum *= 0.2
+
 	if not was_on_floor and is_on_floor():
-		if abs(velocity.y) > 250:
+		if fall_speed > 250:
 			trigger_landing_particles()
 
 	was_on_floor = is_on_floor()
 
+
 func appear():
+	floor_surface = "default"
+	cached_surface = "default"
+	current_surface = "default"
+	update_particles("default")
 	call_deferred("set_physics_process", false)
 	animator.scale = Vector2(0.3, 0.3)
 	animator_status = false
@@ -238,29 +272,39 @@ func disappear():
 func update_animations():
 	# Handle Animations
 	if is_on_floor() and !is_hurt:
+		double_jumping = false
 		if velocity.x == 0:
-			animator.animation = "idle" + player_character
+			animator.play("idle" + player_character)
 		else:
-			animator.animation = "run" + player_character
+			animator.play("run" + player_character)
 	elif wall_sliding:
 		animator.play("wall_slide" + player_character)
 	elif is_hurt:
 		animator.play("hit" + player_character)
 	else:
-		if velocity.y < 0:
-			animator.animation = "jump" + player_character
-		elif air_jump == 2 and double_jumping:
-			animator.play("double_jump" + player_character)
-			await animator.animation_finished
-			double_jumping = false
-			animator.play("fall" + player_character)
-		elif velocity.y > 10 or slamming:
-			animator.animation = "fall" + player_character
-		pass
+		if double_jumping:
+			if animator.animation != "double_jump" + player_character:
+				animator.play("double_jump" + player_character)
+			elif not animator.is_playing():
+				double_jumping = false
+
+		# Handle normal jumping / falling
+		if not double_jumping:
+			if velocity.y < 0:
+				animator.play("jump" + player_character)
+			else:
+				animator.play("fall" + player_character)
 
 
 func fruit_collected():
 	fruits += 1
+
+
+func apply_bounce(bounce_force: float) -> void:
+	velocity.y = bounce_force
+	air_jump += 1
+	is_bouncing = true
+	double_jumping = false
 
 
 func hit(enemy_position: Vector2):
@@ -312,7 +356,6 @@ func out_of_bounds():
 func end():
 	await disappear()
 	get_tree().reload_current_scene()
-	# Change it to next scene
 
 
 func new_respawn(respawn_position):
@@ -337,92 +380,169 @@ func respawn(health_refill = true):
 
 
 func get_surface_type() -> String:
+	floor_surface = "default"
+
 	if not is_on_floor():
-		return current_surface
+		return "default"
+
+	var foot_offset = Vector2(0, 24)
+	var position_to_check = global_position + foot_offset
+
+	var local_pos = tile_map_layer.to_local(position_to_check)
+	var map_pos = tile_map_layer.local_to_map(local_pos)
+	var tile_data: TileData = tile_map_layer.get_cell_tile_data(map_pos)
+
+	if tile_data:
+		var my_custom_data = tile_data.get_custom_data("surface_type")
+		cached_surface = my_custom_data
+		floor_surface = my_custom_data
+		return my_custom_data
+
+	return "default"
+
+
+func get_wall_surface_type() -> String:
+	if not is_on_wall():
+		return "default"
+
+	var direction := Input.get_axis("left", "right")
 
 	for i in get_slide_collision_count():
 		var collision = get_slide_collision(i)
+		var normal = collision.get_normal()
 
-		if collision.get_normal().y < -0.7:
-			if collision.get_collider() is TileMapLayer:
-				var layer = collision.get_collider()
-				var tile_pos = layer.local_to_map(collision.get_position())
-				var tile_data = layer.get_cell_tile_data(tile_pos)
+		if abs(normal.x) > 0.7:
+			if direction != 0 and sign(direction) == -sign(normal.x):
+				if collision.get_collider() is TileMapLayer:
+					var layer = collision.get_collider()
+					var hit_point = collision.get_position()
+					var point_inside_wall = hit_point - normal * 2.0
+					var local_point = layer.to_local(point_inside_wall)
+					var tile_pos = layer.local_to_map(local_point)
+					var tile_data = layer.get_cell_tile_data(tile_pos)
 
-				if tile_data:
-					current_surface = tile_data.get_custom_data("surface_type")
-					return current_surface
+					if tile_data:
+						return tile_data.get_custom_data("surface_type")
 
-	return current_surface
+	return "default"
 
 
-func apply_surface_effects(surface: String) -> void:
+func apply_surface_effects(surface: String, wall_surface: String) -> void:
 	speed = BASE_SPEED
 	acceleration = BASE_ACCELERATION
 	friction = BASE_FRICTION
 	jump_velocity = BASE_JUMP_VELOCITY
+	wall_jump_velocity = BASE_WALL_JUMP_VELOCITY
+	wall_slide_gravity = BASE_WALL_SLIDE_GRAVITY
 
 	match surface:
 		"sand":
-			speed = 140
-			acceleration = 400
-			friction = 950
+			speed = 90
+			acceleration = 350
+			friction = 1000
+			jump_velocity = -350
 		"mud":
-			speed = 100
-			acceleration = 400
+			speed = 40
+			acceleration = 300
 			friction = 1200
-			jump_velocity = -300
+			jump_velocity = -260
 		"ice":
-			speed = 220
+			speed = 200
 			acceleration = 200
 			friction = 20
+			jump_velocity = -420
+		"one_way":
+			can_fall_through = true
+
+	match wall_surface:
+		"sand":
+			wall_jump_velocity = 80
+			wall_slide_gravity = 50
+		"mud":
+			wall_jump_velocity = 60
+			wall_slide_gravity = 10
+		"ice":
+			wall_jump_velocity = 250
+			wall_slide_gravity = 150
 		"one_way":
 			can_fall_through = true
 
 
-func update_particles(surface: String):
-	var moving: bool = abs(velocity.x) > 20 and is_on_floor()
-	
-	if surface == "sand" and moving:
-		if randi() % 6 == 0:
-			$Particles/SandParticles2D.restart()
-	else:
-		$Particles/SandParticles2D.emitting = false
-	
-	$Particles/MudParticles2D.emitting = surface == "mud" and moving
-	
-	$Particles/IceParticles2D.emitting = surface == "ice" and abs(velocity.x) > 80
-	
-	if moving:
-		set_particle_direction($Particles/SandParticles2D)
-		set_particle_direction($Particles/MudParticles2D)
-		set_particle_direction($Particles/IceParticles2D)
+func update_particles(surface: String) -> void:
+	var grounded: bool = is_on_floor()
+	var moving: bool = grounded and abs(velocity.x) > 20
 
-
-func set_particle_direction(particles: GPUParticles2D):
-	var dir = sign(velocity.x)
-
-	if dir == 0:
+	if not grounded:
+		sand_particles_2d.emitting = false
+		mud_particles_2d.emitting = false
+		ice_particles_2d.emitting = false
 		return
 
-	var mat = particles.process_material as ParticleProcessMaterial
+	mud_particles_2d.emitting = surface == "mud" and moving
+	ice_particles_2d.emitting = surface == "ice" and abs(velocity.x) > 80
 
-	if mat:
-		mat.direction = Vector3(-dir, -0.3, 0)
+	if surface == "sand" and moving:
+		var par = sand_particles_2d.process_material as ParticleProcessMaterial
+		par.spread = 50.0
+		if randi() % 6 == 0:
+			sand_particles_2d.restart()
+	else:
+		sand_particles_2d.emitting = false
+
+	if surface == "sand" and moving:
+		var dir = sign(velocity.x)
+
+		if dir == 0:
+			return
+
+		var mat = sand_particles_2d.process_material as ParticleProcessMaterial
+
+		if mat:
+			mat.direction = Vector3(-dir, -0.5, 0)
+
 
 func trigger_landing_particles():
 	match current_surface:
 		"mud":
-			$Particles/MudParticles2D.restart()
-			var original_amount = $MudParticles.amount
-			$Particles/MudParticles2D.amount = 40
-			$Particles/MudParticles2D.restart()
-			$Particles/MudParticles2D.amount = original_amount
+			print("mud")
+			var p = mud_particles_2d
+			var mat = p.process_material as ParticleProcessMaterial
+
+			p.amount = 100
+			mat.direction = Vector3(0, -2, 0)
+			mat.spread = 120
+			p.restart()
 			
+			p.amount = 3
+			mat.direction = Vector3(0, -0.7, 0)
+			mat.spread = 100
 		"sand":
-			$Particles/SandParticles2D.restart()
-			$Particles/SandParticles2D.amount = 25
+			print("sand")
+			var p = sand_particles_2d
+			var mat = p.process_material as ParticleProcessMaterial
+
+			p.amount = 30
+			mat.direction = Vector3(0, -1, 0)
+			mat.spread = 40
+			p.restart()
 			
+			p.amount = 30
+			mat.direction = Vector3(0, -1, 0)
+			mat.spread = 40
 		"ice":
-			$Particles/IceParticles2D.restart()
-			$Particles/IceParticles2D.amount = 20
+			print("ice")
+			var p = ice_particles_2d
+			var mat = p.process_material as ParticleProcessMaterial
+
+			p.amount = 15
+			mat.direction = Vector3(0, -1, 0)
+			mat.spread = 10
+			p.restart()
+			
+			p.amount = 15
+			mat.direction = Vector3(0, -1, 0)
+			mat.spread = 10
+			
+	sand_particles_2d.restart()
+	mud_particles_2d.restart()
+	ice_particles_2d.restart()

@@ -8,8 +8,7 @@ func _ready() -> void:
 func _on_body_entered(body: Node2D) -> void:
 	if body.slamming == false:
 		body.cam.screen_shake(2, 2)
-		body.velocity.y = -450
-		body.air_jump += 1
+		body.apply_bounce(-400)
 	$AnimatedSprite2D.play("hit")
 	await $AnimatedSprite2D.animation_finished
 	hide()
@@ -19,4 +18,3 @@ func respawn():
 	$AnimatedSprite2D.play("default")
 	collision_shape_2d.disabled = false
 	show()
-	Global.fade_in(self)
