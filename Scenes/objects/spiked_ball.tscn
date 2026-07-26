@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://crkaasmqtt4am"]
+
+[ext_resource type="Script" uid="uid://b8vec8naibfd7" path="res://Scripts/spiked_ball.gd" id="1_yjqqj"]
+[ext_resource type="Texture2D" uid="uid://ywbdl3t64r7a" path="res://Assets/Pixel Adventure 1/Traps/Spiked Ball/Spiked Ball.png" id="3_w77yk"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_rycpg"]
+radius = 11.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ngmcx"]
+radius = 12.0
+
+[node name="Spiked Ball" type="Node2D" unique_id=1458619844]
+script = ExtResource("1_yjqqj")
+
+[node name="ChainContainer" type="Node2D" parent="." unique_id=1213827761]
+
+[node name="Ball" type="AnimatableBody2D" parent="." unique_id=1840304368]
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="Ball" unique_id=1499929273]
+process_physics_priority = 1
+shape = SubResource("CircleShape2D_rycpg")
+
+[node name="Detector" type="Area2D" parent="Ball" unique_id=1985091675]
+process_priority = 1
+process_physics_priority = 1
+collision_layer = 8
+
+[node name="Sprite2D" type="Sprite2D" parent="Ball/Detector" unique_id=1812484275]
+texture = ExtResource("3_w77yk")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ball/Detector" unique_id=759022476]
+process_physics_priority = 1
+shape = SubResource("CircleShape2D_ngmcx")
+debug_color = Color(0.70126766, 0.4913296, 0.04589718, 0.41960785)
+
+[connection signal="body_entered" from="Ball/Detector" to="." method="_on_detector_body_entered"]

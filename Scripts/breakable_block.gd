@@ -45,13 +45,13 @@ func smash_block(was_slamming):
 	hide()
 
 func _on_hitbox_bottom_body_entered(body: Node2D) -> void:
-	body.cam.screen_shake(2, 2)
+	body.cam.gentle_shake(1.25, 0.18)
 	body.velocity = Vector2(0, 50)
 	call_deferred("smash_block", false)
 
 func _on_hitbox_top_body_entered(body: Node2D) -> void:
 	if body.box_breakable == true:
-		body.cam.screen_shake(2, 2)
+		body.cam.impact_shake(2.0, 0.25)
 		body.velocity = Vector2(0, 50)
 		call_deferred("smash_block", true)
 	pass

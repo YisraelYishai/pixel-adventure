@@ -3,6 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://bfam2uyh0k4p2" path="res://Assets/Pixel Adventure 1/Traps/Falling Platforms/On (32x10).png" id="1_0msxf"]
 [ext_resource type="Texture2D" uid="uid://dwtmnk32sancv" path="res://Assets/Pixel Adventure 1/Traps/Falling Platforms/Off.png" id="2_lx48v"]
 [ext_resource type="Script" uid="uid://cmpf3fw7btijw" path="res://Scripts/falling_platform.gd" id="3_lx48v"]
+[ext_resource type="Texture2D" uid="uid://ddsm6eguej0d7" path="res://Assets/Pixel Adventure 1/Other/Dust Particle.png" id="4_0tybl"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0tybl"]
 atlas = ExtResource("1_0msxf")
@@ -51,6 +52,31 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hvjnw"]
 size = Vector2(32, 6)
 
+[sub_resource type="Curve" id="Curve_vmp38"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_rn3eh"]
+curve = SubResource("Curve_vmp38")
+
+[sub_resource type="Curve" id="Curve_w8xmc"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_jvs0n"]
+curve = SubResource("Curve_w8xmc")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_vwptf"]
+particle_flag_disable_z = true
+emission_shape = 3
+emission_box_extents = Vector3(10, 1, 0)
+spread = 40.0
+gravity = Vector3(0, 110, 0)
+scale_min = 0.39999998
+scale_max = 0.5
+scale_curve = SubResource("CurveTexture_jvs0n")
+alpha_curve = SubResource("CurveTexture_rn3eh")
+
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_lx48v"]
 size = Vector2(30, 2)
 
@@ -68,6 +94,13 @@ position = Vector2(0, -2)
 shape = SubResource("RectangleShape2D_hvjnw")
 one_way_collision = true
 debug_color = Color(3.465414e-06, 0.5964637, 0.7218088, 0.41960785)
+
+[node name="GPUParticles2D" type="GPUParticles2D" parent="StaticBody2D" unique_id=78337470]
+position = Vector2(0, 7)
+emitting = false
+texture = ExtResource("4_0tybl")
+lifetime = 0.8
+process_material = SubResource("ParticleProcessMaterial_vwptf")
 
 [node name="Area2D" type="Area2D" parent="." unique_id=219225821]
 

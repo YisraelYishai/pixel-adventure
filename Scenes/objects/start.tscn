@@ -3,6 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://bnmtce5jm4jvs" path="res://Assets/Pixel Adventure 1/Items/Checkpoints/Start/Start (Idle).png" id="1_3bxa3"]
 [ext_resource type="Script" uid="uid://cfhoo8wgtpb0p" path="res://Scripts/start.gd" id="1_5ogh5"]
 [ext_resource type="Texture2D" uid="uid://bpvahh55l7mu8" path="res://Assets/Pixel Adventure 1/Items/Checkpoints/Start/Start (Moving) (64x64).png" id="2_r48yj"]
+[ext_resource type="PackedScene" uid="uid://cv6ofa0b72nw2" path="res://Scenes/ui_objects/confetti.tscn" id="4_lb6bl"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_5ogh5"]
 atlas = ExtResource("2_r48yj")
@@ -140,10 +141,10 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_5ogh5"]
-size = Vector2(34, 7)
+size = Vector2(34, 8)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_lb6bl"]
-size = Vector2(34, 2)
+size = Vector2(34, 4)
 
 [node name="Start" type="StaticBody2D" unique_id=1373259860]
 collision_layer = 2
@@ -153,13 +154,16 @@ script = ExtResource("1_5ogh5")
 sprite_frames = SubResource("SpriteFrames_r48yj")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1830059231]
-position = Vector2(11, 28.5)
+position = Vector2(11, 28)
 shape = SubResource("RectangleShape2D_5ogh5")
 
 [node name="Area2D" type="Area2D" parent="." unique_id=1473237322]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=807484961]
-position = Vector2(11, 25)
+position = Vector2(11, 22)
 shape = SubResource("RectangleShape2D_lb6bl")
+
+[node name="Confetti" parent="." unique_id=268185023 instance=ExtResource("4_lb6bl")]
+position = Vector2(10, 7)
 
 [connection signal="body_entered" from="Area2D" to="." method="_on_area_2d_body_entered"]

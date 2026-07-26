@@ -1,0 +1,45 @@
+[gd_scene format=3 uid="uid://cv6ofa0b72nw2"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_yym3c"]
+particles_animation = true
+particles_anim_h_frames = 6
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_jakf0"]
+load_path = "res://.godot/imported/Confetti (16x16).png-147ea65b647bfb26da116ba81173a842.ctex"
+
+[sub_resource type="Curve" id="Curve_yym3c"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.24821839, 0.50192547), 0.0, 0.0, 0, 0, Vector2(0.6520189, 1), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="CurveTexture" id="CurveTexture_jakf0"]
+curve = SubResource("Curve_yym3c")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_jgsew"]
+particle_flag_disable_z = true
+direction = Vector3(0, -1, 0)
+spread = 25.0
+initial_velocity_min = 300.0
+initial_velocity_max = 500.0
+angular_velocity_min = -720.0
+angular_velocity_max = 719.99994
+gravity = Vector3(0, 350, 0)
+radial_accel_min = -100.0
+radial_accel_max = 99.99999
+scale_min = 0.19999999
+scale_max = 0.39999998
+scale_curve = SubResource("CurveTexture_jakf0")
+anim_offset_max = 1.0
+
+[node name="Confetti" type="GPUParticles2D" unique_id=268185023]
+z_index = 3
+material = SubResource("CanvasItemMaterial_yym3c")
+scale = Vector2(0.3, 0.3)
+emitting = false
+amount = 100
+texture = SubResource("CompressedTexture2D_jakf0")
+lifetime = 3.0
+one_shot = true
+explosiveness = 1.0
+process_material = SubResource("ParticleProcessMaterial_jgsew")

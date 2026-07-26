@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://kwxd3adhqb4q" path="res://Scripts/fan.gd" id="1_j6bxr"]
 [ext_resource type="Texture2D" uid="uid://db564vr8vfx88" path="res://Assets/Pixel Adventure 1/Traps/Fan/Off.png" id="1_nfiji"]
 [ext_resource type="Texture2D" uid="uid://c68to86kr3ky5" path="res://Assets/Pixel Adventure 1/Traps/Fan/On (24x8).png" id="2_j6bxr"]
+[ext_resource type="Texture2D" uid="uid://ddsm6eguej0d7" path="res://Assets/Pixel Adventure 1/Other/Dust Particle.png" id="4_bbowg"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_bbowg"]
 atlas = ExtResource("2_j6bxr")
@@ -55,6 +56,34 @@ size = Vector2(24, 8)
 radius = 16.0
 height = 164.0
 
+[sub_resource type="Curve" id="Curve_bbowg"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_rn3eh"]
+curve = SubResource("Curve_bbowg")
+
+[sub_resource type="Curve" id="Curve_rn3eh"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_jvs0n"]
+curve = SubResource("Curve_rn3eh")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_rn3eh"]
+particle_flag_disable_z = true
+emission_shape = 3
+emission_box_extents = Vector3(1, 1, 1)
+direction = Vector3(0, -1, 0)
+spread = 20.0
+initial_velocity_min = 75.0
+initial_velocity_max = 125.0
+gravity = Vector3(0, -100, 0)
+scale_min = 0.39999998
+scale_max = 0.79999995
+scale_curve = SubResource("CurveTexture_jvs0n")
+alpha_curve = SubResource("CurveTexture_rn3eh")
+
 [node name="Fan" type="StaticBody2D" unique_id=1597304167]
 collision_layer = 2
 script = ExtResource("1_j6bxr")
@@ -73,6 +102,13 @@ shape = SubResource("RectangleShape2D_nfiji")
 position = Vector2(0, -82)
 shape = SubResource("CapsuleShape2D_j6bxr")
 debug_color = Color(0.6839485, 0.50199497, 0, 0.41960785)
+
+[node name="GPUParticles2D" type="GPUParticles2D" parent="." unique_id=531379326]
+position = Vector2(0, -5)
+amount = 12
+texture = ExtResource("4_bbowg")
+lifetime = 0.3
+process_material = SubResource("ParticleProcessMaterial_rn3eh")
 
 [connection signal="body_entered" from="Detector" to="." method="_on_detector_body_entered"]
 [connection signal="body_exited" from="Detector" to="." method="_on_detector_body_exited"]

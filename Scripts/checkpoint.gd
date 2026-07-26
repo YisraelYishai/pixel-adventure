@@ -15,5 +15,6 @@ func _on_body_entered(body: Node2D) -> void:
 		status = true
 		body.new_respawn(send_position)
 		animated_sprite_2d.play("flag_out")
+		$Confetti.restart()
 		await animated_sprite_2d.animation_finished
 		animated_sprite_2d.play("flag_idle")

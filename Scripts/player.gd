@@ -1,8 +1,6 @@
 class_name Player
 extends CharacterBody2D
 
-'''To-Do:
-	Adjust values of particles for better visuals during landing'''
 
 const BASE_SPEED = 175.0
 const BASE_ACCELERATION = 750.0
@@ -44,6 +42,7 @@ var current_surface := "default"
 var current_wall_surface := "default"
 var cached_surface := "default"
 var floor_surface := "default"
+var landing_burst_active: bool = false
 var ice_momentum := 0.0
 var air_control := 1.0
 var was_on_floor := false
@@ -51,10 +50,12 @@ var is_bouncing: bool = false
 
 @onready var animator = $AnimatedSprite2D
 @onready var cam = $Camera2D
+@onready var dust_particles_2d: GPUParticles2D = $Particles/DustParticles2D
 @onready var sand_particles_2d: GPUParticles2D = $Particles/SandParticles2D
 @onready var mud_particles_2d: GPUParticles2D = $Particles/MudParticles2D
 @onready var ice_particles_2d: GPUParticles2D = $Particles/IceParticles2D
 @onready var tile_map_layer: TileMapLayer = %TileMapLayer
+@onready var transition: AnimationPlayer = %Transition
 
 
 func _ready() -> void:
@@ -67,8 +68,9 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	# DebugLabel
+	# Debug
 	$DebugLabel.text = "Health: " + str(health)
+
 	# Slam Cooldown
 	if slam_timer > 0:
 		slam_timer -= delta
@@ -76,7 +78,8 @@ func _physics_process(delta: float) -> void:
 	# Handle Terrains
 	var detected_surface = get_surface_type()
 	current_wall_surface = get_wall_surface_type()
-	current_surface = detected_surface if detected_surface != "default" else current_surface
+	if is_on_floor():
+		current_surface = detected_surface
 	apply_surface_effects(current_surface, current_wall_surface)
 	update_particles(floor_surface)
 
@@ -88,10 +91,18 @@ func _physics_process(delta: float) -> void:
 	if is_on_ceiling() or velocity.y > 0:
 		is_bouncing = false
 
+	# Cancel Landing Particles
+	if !is_on_floor():
+		landing_burst_active = false
+		dust_particles_2d.one_shot = false
+		sand_particles_2d.one_shot = false
+		mud_particles_2d.one_shot = false
+		ice_particles_2d.one_shot = false
+
 	# Handle jump
 	if is_on_floor() and can_move:
 		air_jump = 0
-		if Input.is_action_just_pressed("jump") and air_jump < 1 and !slamming:
+		if Input.is_action_pressed("jump") and air_jump < 1 and !slamming:
 			var_jump_applied = false
 			released_jump_key = false
 			air_jump += 1
@@ -165,9 +176,9 @@ func _physics_process(delta: float) -> void:
 		slam_timer = 0.6
 
 		if slam_effect == "jump":
-			cam.screen_shake(3, 1.5)
+			cam.impact_shake(3.5, 0.35)
 		elif slam_effect == "double_jump":
-			cam.screen_shake(4, 1.5)
+			cam.impact_shake(4.5, 0.35)
 		await get_tree().create_timer(0.3).timeout
 		slam_effect = "nil"
 		box_breakable = false
@@ -203,14 +214,14 @@ func _physics_process(delta: float) -> void:
 			if current_surface == "mud":
 				air_control = 0.5
 
-		if direction != 0 and !slamming and can_move:
-			velocity.x = move_toward(
-				velocity.x,
-				target_velocity,
-				acceleration * air_control * delta,
-			)
-		else:
-			velocity.x = move_toward(velocity.x, 0, friction * delta)
+			if direction != 0 and !slamming and can_move:
+				velocity.x = move_toward(
+					velocity.x,
+					target_velocity,
+					acceleration * air_control * delta,
+				)
+			else:
+				velocity.x = move_toward(velocity.x, 0, friction * delta)
 
 	# Handle Flip
 	if can_move:
@@ -233,6 +244,9 @@ func _physics_process(delta: float) -> void:
 			ice_momentum *= 0.2
 
 	if not was_on_floor and is_on_floor():
+		var fresh_surface = get_surface_type()
+		current_surface = fresh_surface
+
 		if fall_speed > 250:
 			trigger_landing_particles()
 
@@ -240,6 +254,7 @@ func _physics_process(delta: float) -> void:
 
 
 func appear():
+	transition.play("fade_out")
 	floor_surface = "default"
 	cached_surface = "default"
 	current_surface = "default"
@@ -307,7 +322,7 @@ func apply_bounce(bounce_force: float) -> void:
 	double_jumping = false
 
 
-func hit(enemy_position: Vector2):
+func hit(enemy_position: Vector2, enemy_motion: Vector2 = Vector2.ZERO):
 	$DebugLabel.add_theme_color_override("font_color", Color.RED)
 
 	if is_hurt:
@@ -317,18 +332,31 @@ func hit(enemy_position: Vector2):
 	set_collision_mask_value(4, false)
 	health -= 1
 
-	var knockback_dir = (global_position - enemy_position).normalized()
-	velocity = knockback_dir * knockback_force
-	cam.screen_shake(2, 2)
+	if health <= 0:
+		death()
+		return
+
+	var away = (global_position - enemy_position).normalized()
+
+	var swing_force = enemy_motion.normalized() * knockback_force * 1.25
+
+	var upward_force = Vector2.UP * 120
+	
+	set_physics_process(false)
+	await get_tree().create_timer(0.15).timeout
+	set_physics_process(true)
+	
+	velocity = (away * knockback_force * 0.55) + swing_force + upward_force
+
+	cam.impact_shake(3.5, 0.3)
+
 	update_animations()
 
-	await get_tree().create_timer(0.2).timeout
+	await get_tree().create_timer(0.3).timeout
 
 	is_hurt = false
-
 	set_collision_mask_value(4, true)
 	update_animations()
-
 	$DebugLabel.add_theme_color_override("font_color", Color.WHITE)
 
 	if health <= 0:
@@ -385,20 +413,37 @@ func get_surface_type() -> String:
 	if not is_on_floor():
 		return "default"
 
-	var foot_offset = Vector2(0, 24)
-	var position_to_check = global_position + foot_offset
+	var foot_offset_y = 24
+	# You may need to tweak this number (e.g., 8, 10, or 12) to match your sprite's width!
+	var foot_spread = 8
 
-	var local_pos = tile_map_layer.to_local(position_to_check)
-	var map_pos = tile_map_layer.local_to_map(local_pos)
-	var tile_data: TileData = tile_map_layer.get_cell_tile_data(map_pos)
+	var points_to_check = [
+		global_position + Vector2(0, foot_offset_y), # Center
+		global_position + Vector2(-foot_spread, foot_offset_y), # Left edge
+		global_position + Vector2(foot_spread, foot_offset_y), # Right edge
+	]
 
-	if tile_data:
-		var my_custom_data = tile_data.get_custom_data("surface_type")
-		cached_surface = my_custom_data
-		floor_surface = my_custom_data
-		return my_custom_data
+	var detected_surface = "default"
 
-	return "default"
+	for point in points_to_check:
+		var local_pos = tile_map_layer.to_local(point)
+		var map_pos = tile_map_layer.local_to_map(local_pos)
+		var tile_data: TileData = tile_map_layer.get_cell_tile_data(map_pos)
+
+		if tile_data:
+			var surface = tile_data.get_custom_data("surface_type")
+
+			if surface == "harmful":
+				cached_surface = surface
+				floor_surface = surface
+				return surface
+
+			if surface != "" and surface != "default":
+				detected_surface = surface
+
+	cached_surface = detected_surface
+	floor_surface = detected_surface
+	return detected_surface
 
 
 func get_wall_surface_type() -> String:
@@ -453,6 +498,9 @@ func apply_surface_effects(surface: String, wall_surface: String) -> void:
 			jump_velocity = -420
 		"one_way":
 			can_fall_through = true
+	if get_surface_type() == "harmful":
+		var facing_dir = -1 if velocity.x >= 0.0 else 1
+		hit(self.global_position + Vector2(10 * facing_dir, 10))
 
 	match wall_surface:
 		"sand":
@@ -469,21 +517,26 @@ func apply_surface_effects(surface: String, wall_surface: String) -> void:
 
 
 func update_particles(surface: String) -> void:
+	if landing_burst_active:
+		return
+
 	var grounded: bool = is_on_floor()
 	var moving: bool = grounded and abs(velocity.x) > 20
 
 	if not grounded:
+		dust_particles_2d.emitting = false
 		sand_particles_2d.emitting = false
 		mud_particles_2d.emitting = false
 		ice_particles_2d.emitting = false
 		return
 
+	dust_particles_2d.emitting = surface == "default" and moving
 	mud_particles_2d.emitting = surface == "mud" and moving
 	ice_particles_2d.emitting = surface == "ice" and abs(velocity.x) > 80
 
 	if surface == "sand" and moving:
 		var par = sand_particles_2d.process_material as ParticleProcessMaterial
-		par.spread = 50.0
+		par.spread = 40.0
 		if randi() % 6 == 0:
 			sand_particles_2d.restart()
 	else:
@@ -498,51 +551,83 @@ func update_particles(surface: String) -> void:
 		var mat = sand_particles_2d.process_material as ParticleProcessMaterial
 
 		if mat:
-			mat.direction = Vector3(-dir, -0.5, 0)
+			mat.direction = Vector3(-dir/2, -0.5, 0)
 
 
 func trigger_landing_particles():
+	if landing_burst_active:
+		return
+	if is_on_floor():
+		landing_burst_active = true
+		dust_particles_2d.one_shot = true
+		sand_particles_2d.one_shot = true
+		mud_particles_2d.one_shot = true
+		ice_particles_2d.one_shot = true
+
 	match current_surface:
+		"default":
+			var p = dust_particles_2d
+			var mat = p.process_material as ParticleProcessMaterial
+
+			mat.direction = Vector3(0, -1, 0)
+			mat.gravity = Vector3(0, 100, 0)
+			mat.initial_velocity_max = 40
+			mat.initial_velocity_min = 25
+			p.restart()
+
+			await get_tree().create_timer(p.lifetime).timeout
+			p.amount = 5
+			mat.direction = Vector3(-sign(velocity.x), -0.8, 0) if velocity.x != 0 else Vector3(0, -1, 0)
+			mat.gravity = Vector3(0, 10, 0)
+			mat.initial_velocity_max = 0
+			mat.initial_velocity_min = 0
 		"mud":
-			print("mud")
 			var p = mud_particles_2d
 			var mat = p.process_material as ParticleProcessMaterial
 
-			p.amount = 100
-			mat.direction = Vector3(0, -2, 0)
-			mat.spread = 120
+			mat.direction = Vector3(0, -1, 0)
+			mat.spread = 120.0
 			p.restart()
-			
-			p.amount = 3
+
+			await get_tree().create_timer(p.lifetime).timeout
 			mat.direction = Vector3(0, -0.7, 0)
-			mat.spread = 100
+			mat.spread = 50
 		"sand":
-			print("sand")
 			var p = sand_particles_2d
 			var mat = p.process_material as ParticleProcessMaterial
 
-			p.amount = 30
 			mat.direction = Vector3(0, -1, 0)
-			mat.spread = 40
+			mat.initial_velocity_max = 70
+			mat.initial_velocity_min = 40
+			mat.spread = 30
 			p.restart()
-			
-			p.amount = 30
-			mat.direction = Vector3(0, -1, 0)
-			mat.spread = 40
+
+			await get_tree().create_timer(p.lifetime).timeout
+			mat.direction = Vector3(0, -0.8, 0)
+			mat.initial_velocity_max = 50
+			mat.spread = 60
 		"ice":
-			print("ice")
 			var p = ice_particles_2d
 			var mat = p.process_material as ParticleProcessMaterial
 
 			p.amount = 15
+			mat.gravity.y = 300
 			mat.direction = Vector3(0, -1, 0)
-			mat.spread = 10
+			mat.spread = 120
+			mat.angle_max = -400
+			mat.angle_min = 100
 			p.restart()
-			
+
+			await get_tree().create_timer(p.lifetime).timeout
 			p.amount = 15
-			mat.direction = Vector3(0, -1, 0)
+			mat.gravity.y = 0
+			mat.direction = Vector3(0, 0, 0)
 			mat.spread = 10
-			
-	sand_particles_2d.restart()
-	mud_particles_2d.restart()
-	ice_particles_2d.restart()
+			mat.angle_max = 0
+			mat.angle_min = 0
+
+	landing_burst_active = false
+	dust_particles_2d.one_shot = false # <-- Added
+	sand_particles_2d.one_shot = false
+	mud_particles_2d.one_shot = false
+	ice_particles_2d.one_shot = false

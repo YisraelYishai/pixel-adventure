@@ -10,7 +10,10 @@ var max_weight := 0.5
 var weight_build_speed := 2.0
 var player_on_top := false
 
+@onready var gpu_particles_2d: GPUParticles2D = $StaticBody2D/GPUParticles2D
+
 func _ready() -> void:
+	gpu_particles_2d.emitting = true
 	Global.respawn_objects.connect(respawn)
 	initial_y = global_position.y
 
@@ -39,6 +42,7 @@ func _on_area_2d_body_exited(_body: Node2D) -> void:
 	weight = 0.0
 
 func start_fall():
+	gpu_particles_2d.emitting = false
 	if has_fallen:
 		return
 	
@@ -81,4 +85,5 @@ func respawn():
 	$StaticBody2D/CollisionShape2D.disabled = false
 	self.play("default")
 	
+	gpu_particles_2d.emitting = true
 	show()

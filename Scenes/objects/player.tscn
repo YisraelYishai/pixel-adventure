@@ -32,9 +32,11 @@
 [ext_resource type="Texture2D" uid="uid://ckrabe7rusdsq" path="res://Assets/Pixel Adventure 1/Main Characters/Pink Man/Run (32x32).png" id="27_7ldla"]
 [ext_resource type="Texture2D" uid="uid://c4pukps5upqjn" path="res://Assets/Pixel Adventure 1/Main Characters/Ninja Frog/Wall Jump (32x32).png" id="30_r7t2e"]
 [ext_resource type="Texture2D" uid="uid://bsecndjglm126" path="res://Assets/Pixel Adventure 1/Main Characters/Pink Man/Wall Jump (32x32).png" id="31_nmr2m"]
+[ext_resource type="Texture2D" uid="uid://ddsm6eguej0d7" path="res://Assets/Pixel Adventure 1/Other/Dust Particle.png" id="33_8gxox"]
 [ext_resource type="Texture2D" uid="uid://b8uu8fj4444n2" path="res://Assets/Pixel Adventure 1/Traps/Sand Mud Ice/Sand Particle.png" id="33_nv4vc"]
 [ext_resource type="Texture2D" uid="uid://byorfb6gccv4d" path="res://Assets/Pixel Adventure 1/Traps/Sand Mud Ice/Mud Particle.png" id="34_8gxox"]
 [ext_resource type="Texture2D" uid="uid://daia38bnio167" path="res://Assets/Pixel Adventure 1/Traps/Sand Mud Ice/Ice Particle.png" id="35_11gg7"]
+[ext_resource type="PackedScene" uid="uid://bq1yr3c3qiqfc" path="res://Scenes/ui_objects/transition.tscn" id="37_12abh"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_qpa8y"]
 atlas = ExtResource("3_gymyn")
@@ -1462,13 +1464,27 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_v0iea"]
 size = Vector2(18, 24)
 
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_8gxox"]
+particle_flag_disable_z = true
+angle_min = -720.0
+angle_max = 720.0
+direction = Vector3(0, -0.8, 0)
+spread = 180.0
+initial_velocity_min = 1.0
+initial_velocity_max = 20.0
+gravity = Vector3(0, 500, 0)
+scale_min = 0.39999998
+scale_max = 0.7
+
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_qpa8y"]
 particle_flag_disable_z = true
-direction = Vector3(0, -0.5, 0)
-spread = 50.0
-initial_velocity_min = 55.0
-initial_velocity_max = 60.0
-gravity = Vector3(0, 250, 0)
+emission_shape = 1
+emission_sphere_radius = 2.0
+direction = Vector3(0, -0.8, 0)
+spread = 60.0
+initial_velocity_min = 40.0
+initial_velocity_max = 50.0
+gravity = Vector3(0, 300, 0)
 scale_min = 0.29999998
 scale_max = 0.5
 
@@ -1487,7 +1503,7 @@ direction = Vector3(0, -0.7, 0)
 spread = 100.0
 initial_velocity_min = 80.0
 initial_velocity_max = 90.0
-gravity = Vector3(0, 300, 0)
+gravity = Vector3(0, 350, 0)
 tangential_accel_min = -2.2351742e-06
 tangential_accel_max = 99.99999
 damping_min = 100.00001
@@ -1506,6 +1522,8 @@ curve = SubResource("Curve_8gxox")
 particle_flag_disable_z = true
 emission_shape = 1
 emission_sphere_radius = 4.0
+angle_min = -418.3
+angle_max = 301.7
 direction = Vector3(0, 0, 0)
 spread = 0.0
 initial_velocity_min = 50.0
@@ -1534,6 +1552,9 @@ drag_right_margin = 0.15
 drag_bottom_margin = 0.15
 script = ExtResource("2_f1ek2")
 
+[node name="Transition" parent="Camera2D" unique_id=1971887846 instance=ExtResource("37_12abh")]
+unique_name_in_owner = true
+
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=423751178]
 sprite_frames = SubResource("SpriteFrames_mie3u")
 animation = &"idle4"
@@ -1546,17 +1567,24 @@ debug_color = Color(0, 0.6, 0.69803923, 0)
 [node name="Particles" type="Marker2D" parent="." unique_id=1994106595]
 position = Vector2(0, 15)
 
+[node name="DustParticles2D" type="GPUParticles2D" parent="Particles" unique_id=607514448]
+emitting = false
+amount = 4
+texture = ExtResource("33_8gxox")
+lifetime = 0.3
+explosiveness = 0.8
+process_material = SubResource("ParticleProcessMaterial_8gxox")
+
 [node name="SandParticles2D" type="GPUParticles2D" parent="Particles" unique_id=1080462704]
 emitting = false
+amount = 15
 texture = ExtResource("33_nv4vc")
-lifetime = 0.4
-explosiveness = 0.8
+lifetime = 0.3
 process_material = SubResource("ParticleProcessMaterial_qpa8y")
 
 [node name="MudParticles2D" type="GPUParticles2D" parent="Particles" unique_id=414268127]
-visible = false
 emitting = false
-amount = 3
+amount = 2
 texture = ExtResource("34_8gxox")
 lifetime = 0.2
 explosiveness = 0.6

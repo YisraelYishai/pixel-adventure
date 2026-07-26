@@ -5,7 +5,6 @@ extends ParallaxBackground
 @onready var parallax_layer: ParallaxLayer = $ParallaxLayer
 var scroll_speed: float = 20.0
 
-# Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	background_img.texture = load("res://Assets/Pixel Adventure 1/Background/" + background_image + ".png")
 

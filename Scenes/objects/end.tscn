@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://dec2rps36nd4h" path="res://Scripts/end.gd" id="1_02kpm"]
 [ext_resource type="Texture2D" uid="uid://bu8kqyq8p2gsx" path="res://Assets/Pixel Adventure 1/Items/Checkpoints/End/End (Idle).png" id="1_xmt8n"]
 [ext_resource type="Texture2D" uid="uid://bmsilv562xrxg" path="res://Assets/Pixel Adventure 1/Items/Checkpoints/End/End (Pressed) (64x64).png" id="2_02kpm"]
+[ext_resource type="PackedScene" uid="uid://cv6ofa0b72nw2" path="res://Scenes/ui_objects/confetti.tscn" id="4_ql4ve"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_ql4ve"]
 atlas = ExtResource("2_02kpm")
@@ -109,5 +110,8 @@ shape = SubResource("RectangleShape2D_ql4ve")
 position = Vector2(0, -13.5)
 shape = SubResource("RectangleShape2D_h8xgm")
 debug_color = Color(0.8300603, 0.39400962, 0.00073928834, 0.41960785)
+
+[node name="Confetti" parent="." unique_id=268185023 instance=ExtResource("4_ql4ve")]
+position = Vector2(0, -12)
 
 [connection signal="body_entered" from="Area2D" to="." method="_on_area_2d_body_entered"]

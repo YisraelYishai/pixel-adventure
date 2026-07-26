@@ -5,7 +5,7 @@ extends Path2D
 @export var max_speed: float = 75.0
 
 var chain_texture: Texture2D = preload("res://Assets/Pixel Adventure 1/Traps/Platforms/Chain.png")
-var spacing: float = 16.0
+var spacing: float = 12.0
 
 @onready var chain_container: Node2D = $ChainContainer
 

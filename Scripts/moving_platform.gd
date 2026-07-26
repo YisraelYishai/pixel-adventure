@@ -14,7 +14,11 @@ var is_paused: bool = false
 var MAX_SPEED
 const ACCEL := 4.0
 
-func _ready() -> void:	
+func _ready() -> void:
+	Global.respawn_objects.connect(respawn)
+	config()
+	
+func config():
 	MAX_SPEED = moving_platform.max_speed
 	mode = moving_platform.PlatformType
 	
@@ -95,3 +99,8 @@ func _on_detector_body_exited(body: Node2D) -> void:
 		
 		if not player_on_platform:
 			target_speed = 0
+
+func respawn():
+	config()
+	if mode == "Platform2":
+		is_paused = true
