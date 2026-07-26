@@ -267,7 +267,7 @@ func appear():
 	animator.play("appearing")
 	await animator.animation_finished
 	animator.scale = Vector2(1.0, 1.0)
-	animator.play("idle" + player_character)
+	#animator.play("idle" + player_character)
 	call_deferred("set_physics_process", true)
 	animator_status = true
 
@@ -370,7 +370,6 @@ func death():
 	collision_mask = 0
 	can_move = false
 	animator.play("idle" + player_character)
-	animator_status = false
 	var tween = create_tween().set_parallel(true)
 	tween.tween_property(self, "rotation_degrees", 45, 1.5)
 	tween.finished.connect(respawn)
