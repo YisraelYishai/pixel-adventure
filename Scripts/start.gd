@@ -4,7 +4,6 @@ extends StaticBody2D
 
 func runtime():
 	animated_sprite_2d.play("moving")
-	$Confetti.restart()
 	await animated_sprite_2d.animation_finished
 	animated_sprite_2d.play("default")
 

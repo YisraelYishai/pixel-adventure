@@ -9,6 +9,8 @@ var chain_texture: Texture2D = preload("res://Assets/Pixel Adventure 1/Traps/Spi
 var spacing: float = 12.0
 var time_passed: float = 0.0
 var previous_pos: Vector2
+var knockback_scale: float = 1.25
+var max_knockback_speed: float = 300.0
 
 @onready var chain_container: Node2D = $ChainContainer
 @onready var detector: Area2D = $Ball/Detector
@@ -20,16 +22,12 @@ func _ready() -> void:
 	_build_chain()
 
 func _process(delta: float) -> void:
-	var current = global_position
-	var sweep_velocity = current - previous_pos
-	previous_pos = current
-	
 	time_passed += delta
+	rotation_degrees = sin(time_passed * swing_speed) * max_angle_degrees
 
-	var angle = sin(time_passed * swing_speed) * max_angle_degrees
-
-	rotation_degrees = angle
-
+func _physics_process(_delta: float) -> void:
+	for body in detector.get_overlapping_bodies():
+		_on_detector_body_entered(body)
 
 func _build_chain() -> void:
 	var num_links = int(length / spacing)
@@ -42,7 +40,12 @@ func _build_chain() -> void:
 		
 		chain_container.add_child(link_sprite)
 
+func get_sweep_velocity() -> Vector2:
+	var ang_vel := deg_to_rad(max_angle_degrees) * swing_speed * cos(time_passed * swing_speed)
+	var r := detector.global_position - global_position
+	var vel := Vector2(-r.y, r.x) * ang_vel * knockback_scale
+	return vel.limit_length(max_knockback_speed)
+
 func _on_detector_body_entered(body: Node2D) -> void:
 	if body is Player and body.has_method("hit"):
-		var sweep_velocity = global_position - previous_pos
-		body.hit(global_position, sweep_velocity)
+		body.hit(global_position, get_sweep_velocity())

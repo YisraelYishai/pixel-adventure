@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bpipmvqx5g83t"]
+
+[ext_resource type="Script" uid="uid://bg8sgshwpsimq" path="res://Scripts/transition_wipe.gd" id="1_nybqy"]
+
+[node name="TransitionWipe" type="Node" unique_id=1925025303]
+script = ExtResource("1_nybqy")

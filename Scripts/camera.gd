@@ -43,8 +43,8 @@ func screen_shake(intensity: float, time: float, frequency: float = 2.0) -> void
 
 
 func gentle_shake(intensity: float = 1.0, time: float = 0.2) -> void:
-	screen_shake(intensity * 0.8, time, 1.2)
+	screen_shake(intensity * 10, time, 1.2)
 
 
 func impact_shake(intensity: float = 3.5, time: float = 0.3) -> void:
-	screen_shake(intensity, time, 2.5)
+	screen_shake(intensity * 1.5, time, 2.5)

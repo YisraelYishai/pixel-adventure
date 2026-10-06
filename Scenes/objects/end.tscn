@@ -43,7 +43,7 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("1_xmt8n")
 }],
-"loop": false,
+"loop": 0,
 "name": &"default",
 "speed": 5.0
 }, {
@@ -72,7 +72,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_pa61i")
 }],
-"loop": false,
+"loop": 0,
 "name": &"pressed",
 "speed": 20.0
 }]

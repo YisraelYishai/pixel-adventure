@@ -3,7 +3,7 @@ extends ParallaxBackground
 @export_enum("Blue", "Brown", "Gray", "Green", "Pink", "Purple", "Yellow") var background_image : String = "Green"
 @onready var background_img: TextureRect = $ParallaxLayer/BackgroundImg
 @onready var parallax_layer: ParallaxLayer = $ParallaxLayer
-var scroll_speed: float = 20.0
+var scroll_speed: float = 25.0
 
 func _ready() -> void:
 	background_img.texture = load("res://Assets/Pixel Adventure 1/Background/" + background_image + ".png")

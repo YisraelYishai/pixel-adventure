@@ -10,10 +10,37 @@ const BASE_WALL_JUMP_VELOCITY = 150.0
 const BASE_WALL_SLIDE_GRAVITY = 90.0
 const SLAM_VELOCITY = 1100.0
 const SLAM_PAUSE_TIME = 0.3
+const LANDING_MIN_SPEED = 250.0
+const LANDING_MAX_SPEED = 750.0
+const FOOT_OFFSET_Y = 17.0
+const RUN_DUST_LIFETIME = 0.15
+const LANDING_FX = {
+	"default": {
+		"color": Color("d9d2c3"), "amount": 8, "lifetime": 0.3,
+		"vel": Vector2(35, 85), "gravity": 180.0, "spread": 20.0,
+		"up": 0.25, "size": Vector2(2, 4), "damping": 60.0, "spin": 0.0,
+	},
+	"sand": {
+		"color": Color("d8b778"), "amount": 12, "lifetime": 0.6,
+		"vel": Vector2(40, 120), "gravity": 420.0, "spread": 40.0,
+		"up": 0.6, "size": Vector2(1.5, 3), "damping": 30.0, "spin": 0.0,
+	},
+	"mud": {
+		"color": Color("71a121ff"), "amount": 8, "lifetime": 0.5,
+		"vel": Vector2(50, 130), "gravity": 750.0, "spread": 35.0,
+		"up": 1.0, "size": Vector2(3, 5), "damping": 10.0, "spin": 0.0,
+	},
+	"ice": {
+		"color": Color("cdf3ff"), "amount": 14, "lifetime": 0.55,
+		"vel": Vector2(70, 160), "gravity": 320.0, "spread": 45.0,
+		"up": 0.7, "size": Vector2(2, 3.5), "damping": 20.0, "spin": 540.0,
+	},
+}
 
 @export_category("Player Settings")
-@export_enum("1", "2", "3", "4") var player_character: String = "1"
+@export_enum("Mask Dude", "Ninja Frog", "Pink Man", "Virtual Guy") var player_character_value: String = "Virtual Guy"
 
+var player_character: String
 var speed = 200.0
 var acceleration = 800.0
 var friction = 700.0
@@ -35,18 +62,26 @@ var respawn_point: Vector2
 var fruits = 0
 var health = 3
 var respawning: bool
+var ending: bool = false
 var is_hurt = false
+var is_dead = false
+var invincibility_time: float = 1.5
+var is_invincible := false
 var knockback_force = 500
 var can_fall_through = false
 var current_surface := "default"
 var current_wall_surface := "default"
 var cached_surface := "default"
 var floor_surface := "default"
-var landing_burst_active: bool = false
 var ice_momentum := 0.0
 var air_control := 1.0
 var was_on_floor := false
 var is_bouncing: bool = false
+var swing_knockback_multiplier: float = 2
+var life_id := 0
+var respawn_locked := false
+var transitioning := false
+var death_tween: Tween
 
 @onready var animator = $AnimatedSprite2D
 @onready var cam = $Camera2D
@@ -55,14 +90,28 @@ var is_bouncing: bool = false
 @onready var mud_particles_2d: GPUParticles2D = $Particles/MudParticles2D
 @onready var ice_particles_2d: GPUParticles2D = $Particles/IceParticles2D
 @onready var tile_map_layer: TileMapLayer = %TileMapLayer
-@onready var transition: AnimationPlayer = %Transition
+@onready var transition_fade: CanvasLayer = %TransitionFade
+@onready var transition_wipe: Node = %TransitionWipe
+@onready var shutter: ColorRect = $"../../CanvasLayer/Shutter"
 
 
 func _ready() -> void:
+	
+	shutter.visible = true
+	
+	set_character()
+	
+	dust_particles_2d.lifetime = RUN_DUST_LIFETIME
 	call_deferred("set_physics_process", false)
 	self.visible = false
 	await get_tree().create_timer(0.3).timeout
 	self.position = %InitialSpawnPlayer.position
+	
+	var transition_reparent := transition_wipe
+	transition_reparent.play(true)
+	await transition_reparent.covered
+	shutter.visible = false
+	
 	appear()
 	new_respawn(%InitialSpawnPlayer.position)
 
@@ -90,14 +139,6 @@ func _physics_process(delta: float) -> void:
 	# Check Bounce for Trampoline
 	if is_on_ceiling() or velocity.y > 0:
 		is_bouncing = false
-
-	# Cancel Landing Particles
-	if !is_on_floor():
-		landing_burst_active = false
-		dust_particles_2d.one_shot = false
-		sand_particles_2d.one_shot = false
-		mud_particles_2d.one_shot = false
-		ice_particles_2d.one_shot = false
 
 	# Handle jump
 	if is_on_floor() and can_move:
@@ -157,7 +198,7 @@ func _physics_process(delta: float) -> void:
 			set_collision_mask_value(2, true)
 			can_fall_through = false
 			return
-		if !is_on_floor() and !slamming and slam_timer <= 0 and can_move:
+		if !is_on_floor() and !slamming and !wall_sliding and slam_timer <= 0 and can_move:
 			slamming = true
 			box_breakable = true
 			if air_jump == 1:
@@ -176,16 +217,16 @@ func _physics_process(delta: float) -> void:
 		slam_timer = 0.6
 
 		if slam_effect == "jump":
-			cam.impact_shake(3.5, 0.35)
+			cam.impact_shake(7, 0.35)
 		elif slam_effect == "double_jump":
-			cam.impact_shake(4.5, 0.35)
+			cam.impact_shake(11, 0.35)
 		await get_tree().create_timer(0.3).timeout
 		slam_effect = "nil"
 		box_breakable = false
 		cam.offset = Vector2(0, 0)
 
 	# Handle Reload
-	if Input.is_action_just_pressed("reload") and is_on_floor():
+	if Input.is_action_just_pressed("reload") and is_on_floor() and !respawn_locked and !transitioning:
 		await disappear()
 		respawn(false)
 
@@ -247,32 +288,50 @@ func _physics_process(delta: float) -> void:
 		var fresh_surface = get_surface_type()
 		current_surface = fresh_surface
 
-		if fall_speed > 250:
-			trigger_landing_particles()
+		if fall_speed > LANDING_MIN_SPEED:
+			trigger_landing_particles(fall_speed)
 
 	was_on_floor = is_on_floor()
 
+func set_character():
+	match player_character_value:
+		"Mask Dude":
+			player_character = "1"
+		"Ninja Frog":
+			player_character = "2"
+		"Pink Man":
+			player_character = "3"
+		"Virtual Guy":
+			player_character = "4"
+
 
 func appear():
-	transition.play("fade_out")
+	transitioning = true
+	self.visible = false
 	floor_surface = "default"
 	cached_surface = "default"
 	current_surface = "default"
 	update_particles("default")
 	call_deferred("set_physics_process", false)
+
 	animator.scale = Vector2(0.3, 0.3)
 	animator_status = false
+	await get_tree().create_timer(0.75).timeout
 	self.visible = true
 	self.velocity = Vector2.ZERO
 	animator.play("appearing")
 	await animator.animation_finished
+
 	animator.scale = Vector2(1.0, 1.0)
-	#animator.play("idle" + player_character)
 	call_deferred("set_physics_process", true)
 	animator_status = true
+	transitioning = false
+	respawn_locked = false
 
 
 func disappear():
+	transitioning = true
+	cancel_pending()
 	call_deferred("set_physics_process", false)
 	self.visible = false
 	animator.scale = Vector2(0.3, 0.3)
@@ -285,6 +344,8 @@ func disappear():
 
 
 func update_animations():
+	if transitioning:
+		return
 	# Handle Animations
 	if is_on_floor() and !is_hurt:
 		double_jumping = false
@@ -323,84 +384,157 @@ func apply_bounce(bounce_force: float) -> void:
 
 
 func hit(enemy_position: Vector2, enemy_motion: Vector2 = Vector2.ZERO):
-	$DebugLabel.add_theme_color_override("font_color", Color.RED)
-
-	if is_hurt:
+	if is_hurt or is_dead or is_invincible or respawn_locked or transitioning:
 		return
 
+	var id := life_id
+	$DebugLabel.add_theme_color_override("font_color", Color.RED)
 	is_hurt = true
 	set_collision_mask_value(4, false)
 	health -= 1
+	var dying = health <= 0
 
-	if health <= 0:
+	if not dying:
+		invincibility_flash()
+
+	var away = (global_position - enemy_position).normalized()
+	var swing_force = Vector2.ZERO
+	if enemy_motion.dot(away) > 0.0:
+		swing_force = enemy_motion * swing_knockback_multiplier
+	var upward_force = Vector2.UP * 120
+
+	set_physics_process(false)
+	await get_tree().create_timer(0.15).timeout
+	if not is_inside_tree() or id != life_id:
+		return
+	set_physics_process(true)
+
+	velocity = (away * knockback_force * 0.55) + swing_force + upward_force
+	cam.impact_shake(3.5, 0.3)
+
+	if dying:
+		is_dead = true
+		update_animations()
+		await get_tree().create_timer(0.3).timeout
+		if not is_inside_tree() or id != life_id:
+			return
 		death()
 		return
 
-	var away = (global_position - enemy_position).normalized()
-
-	var swing_force = enemy_motion.normalized() * knockback_force * 1.25
-
-	var upward_force = Vector2.UP * 120
-	
-	set_physics_process(false)
-	await get_tree().create_timer(0.15).timeout
-	set_physics_process(true)
-	
-	velocity = (away * knockback_force * 0.55) + swing_force + upward_force
-
-	cam.impact_shake(3.5, 0.3)
-
 	update_animations()
-
 	await get_tree().create_timer(0.3).timeout
+	if not is_inside_tree() or id != life_id:
+		return
 
 	is_hurt = false
 	set_collision_mask_value(4, true)
 	update_animations()
 	$DebugLabel.add_theme_color_override("font_color", Color.WHITE)
 
-	if health <= 0:
-		death()
+func cancel_pending() -> void:
+	life_id += 1
+	if death_tween and death_tween.is_valid():
+		death_tween.kill()
 
+func invincibility_flash() -> void:
+	var id := life_id
+	is_invincible = true
+	var elapsed := 0.0
+	while elapsed < invincibility_time and is_invincible and id == life_id:
+		animator.modulate.a = 0.3 if animator.modulate.a > 0.9 else 1.0
+		await get_tree().create_timer(0.08).timeout
+		if not is_inside_tree():
+			return
+		elapsed += 0.08
+	if id != life_id:
+		return
+	animator.modulate.a = 1.0
+	is_invincible = false
 
 func death():
 	respawning = true
+	is_hurt = false
+	animator_status = false
 	z_index = 5
 	collision_layer = 0
 	collision_mask = 0
 	can_move = false
 	animator.play("idle" + player_character)
-	var tween = create_tween().set_parallel(true)
-	tween.tween_property(self, "rotation_degrees", 45, 1.5)
-	tween.finished.connect(respawn)
+	death_tween = create_tween().set_parallel(true)
+	death_tween.tween_property(self, "rotation_degrees", 45, 1.5)
+	death_tween.finished.connect(respawn)
+
 
 
 func out_of_bounds():
+	if respawn_locked or transitioning:
+		return
+	var id := life_id
 	await get_tree().create_timer(0.5).timeout
+	if id != life_id or respawn_locked:
+		return
 	respawn(true)
 
 
+
 func end():
+	if ending:
+		return
+	ending = true
+
+	var tree := get_tree()
 	await disappear()
-	get_tree().reload_current_scene()
+
+	if tree == null:
+		return
+	
+	var transition_reparent := transition_wipe
+	transition_reparent.play()
+	await transition_reparent.covered
+	tree.change_scene_to_file("res://Scenes/levels/test2.tscn")
 
 
 func new_respawn(respawn_position):
 	respawn_point = respawn_position
+	respawn_point += Vector2(0, -25)
 
 
 func respawn(health_refill = true):
+	if respawn_locked:
+		return
+	respawn_locked = true
+	cancel_pending()
+
 	respawning = true
+	is_hurt = false
+	is_dead = false
+	is_invincible = false
+	slamming = false
+	slam_effect = "nil"
+	box_breakable = false
+	double_jumping = false
+	wall_sliding = false
+	ice_momentum = 0.0
+	velocity = Vector2.ZERO
+	animator.modulate.a = 1.0
+	$DebugLabel.add_theme_color_override("font_color", Color.WHITE)
+
 	if health_refill:
 		health = 3
+
 	rotation_degrees = 0
 	z_index = 1
+
 	set_collision_layer_value(1, true)
 	set_collision_mask_value(2, true)
 	set_collision_mask_value(4, true)
+
 	self.position = respawn_point
+	transition_fade.animate()
 	appear()
+
 	can_move = true
+
 	await get_tree().create_timer(0.2).timeout
 	Global.respawn_objects.emit()
 	respawning = false
@@ -413,13 +547,12 @@ func get_surface_type() -> String:
 		return "default"
 
 	var foot_offset_y = 24
-	# You may need to tweak this number (e.g., 8, 10, or 12) to match your sprite's width!
-	var foot_spread = 8
+	var foot_spread = 6
 
 	var points_to_check = [
-		global_position + Vector2(0, foot_offset_y), # Center
-		global_position + Vector2(-foot_spread, foot_offset_y), # Left edge
-		global_position + Vector2(foot_spread, foot_offset_y), # Right edge
+		global_position + Vector2(0, foot_offset_y),
+		global_position + Vector2(-foot_spread, foot_offset_y),
+		global_position + Vector2(foot_spread, foot_offset_y),
 	]
 
 	var detected_surface = "default"
@@ -470,6 +603,12 @@ func get_wall_surface_type() -> String:
 
 	return "default"
 
+func standing_on_tilemap() -> bool:
+	for i in get_slide_collision_count():
+		var c := get_slide_collision(i)
+		if c.get_normal().dot(up_direction) > 0.7:
+			return c.get_collider() is TileMapLayer
+	return false
 
 func apply_surface_effects(surface: String, wall_surface: String) -> void:
 	speed = BASE_SPEED
@@ -516,10 +655,8 @@ func apply_surface_effects(surface: String, wall_surface: String) -> void:
 
 
 func update_particles(surface: String) -> void:
-	if landing_burst_active:
-		return
 
-	var grounded: bool = is_on_floor()
+	var grounded: bool = is_on_floor() and standing_on_tilemap()
 	var moving: bool = grounded and abs(velocity.x) > 20
 
 	if not grounded:
@@ -553,80 +690,101 @@ func update_particles(surface: String) -> void:
 			mat.direction = Vector3(-dir/2, -0.5, 0)
 
 
-func trigger_landing_particles():
-	if landing_burst_active:
+class LandingBurst extends Node2D:
+	const SURFACE_FRICTION = 600.0
+
+	var parts: Array = []
+	var gravity := 400.0
+	var damping := 0.0
+	var color := Color.WHITE
+	var spin := 0.0
+
+	func setup(cfg: Dictionary, t: float) -> void:
+		color = cfg.color
+		gravity = cfg.gravity
+		damping = cfg.damping
+		spin = cfg.spin
+
+		var count := int(lerpf(cfg.amount * 0.5, cfg.amount * 1.5, t)) * 2
+		var vel_scale := lerpf(0.7, 1.3, t)
+		var base_angle := atan(cfg.up)
+		var spread_rad := deg_to_rad(cfg.spread)
+
+		for i in count:
+			var side := -1.0 if i % 2 == 0 else 1.0
+			var angle := base_angle + randf_range(-spread_rad, spread_rad)
+			angle = maxf(angle, 0.05)
+			var speed := randf_range(cfg.vel.x, cfg.vel.y) * vel_scale
+
+			if t > 0.4 and i % 5 == 0:
+				angle = deg_to_rad(randf_range(70.0, 110.0))
+				side = 1.0
+				speed *= 0.6
+
+			var life: float = cfg.lifetime * randf_range(0.7, 1.0)
+			parts.append({
+				"pos": Vector2(randf_range(-6.0, 6.0), -1.0),
+				"vel": Vector2(side * cos(angle), -sin(angle)) * speed,
+				"age": 0.0,
+				"life": life,
+				"size": randf_range(cfg.size.x, cfg.size.y * lerpf(0.9, 1.4, t)),
+				"rot": randf() * TAU,
+				"spin": randf_range(-spin, spin) if spin > 0.0 else 0.0,
+			})
+
+	func _process(delta: float) -> void:
+		for p in parts:
+			p.vel.y += gravity * delta
+			p.vel.x = move_toward(p.vel.x, 0.0, damping * delta)
+			p.pos += p.vel * delta
+			p.rot += deg_to_rad(p.spin) * delta
+			p.age += delta
+
+			if p.pos.y >= 0.0:
+				p.pos.y = 0.0
+				p.vel.y = 0.0
+				p.vel.x = move_toward(p.vel.x, 0.0, SURFACE_FRICTION * delta)
+				p.spin = 0.0
+
+		parts = parts.filter(func(p): return p.age < p.life)
+		if parts.is_empty():
+			queue_free()
+		else:
+			queue_redraw()
+
+	func _draw() -> void:
+		for p in parts:
+			var k: float = p.age / p.life
+			var s: float = p.size * (1.0 - k * 0.7)
+			var c := color
+			c.a = 1.0 - smoothstep(0.5, 1.0, k)
+			draw_set_transform(p.pos, p.rot, Vector2.ONE)
+			draw_rect(Rect2(-s * 0.5, -s * 0.5, s, s), c)
+
+
+func trigger_landing_particles(impact_speed: float = 400.0) -> void:
+	if not standing_on_tilemap():
 		return
-	if is_on_floor():
-		landing_burst_active = true
-		dust_particles_2d.one_shot = true
-		sand_particles_2d.one_shot = true
-		mud_particles_2d.one_shot = true
-		ice_particles_2d.one_shot = true
+	
+	var cfg: Dictionary = LANDING_FX.get(current_surface, LANDING_FX["default"])
+	var t := clampf(inverse_lerp(LANDING_MIN_SPEED, LANDING_MAX_SPEED, impact_speed), 0.0, 1.0)
 
-	match current_surface:
-		"default":
-			var p = dust_particles_2d
-			var mat = p.process_material as ParticleProcessMaterial
+	var burst := LandingBurst.new()
+	burst.setup(cfg, t)
+	burst.z_as_relative = false
+	burst.z_index = z_index + 1
 
-			mat.direction = Vector3(0, -1, 0)
-			mat.gravity = Vector3(0, 100, 0)
-			mat.initial_velocity_max = 40
-			mat.initial_velocity_min = 25
-			p.restart()
+	get_burst_parent().add_child(burst)
+	burst.global_position = global_position + Vector2(0, FOOT_OFFSET_Y)
 
-			await get_tree().create_timer(p.lifetime).timeout
-			p.amount = 5
-			mat.direction = Vector3(-sign(velocity.x), -0.8, 0) if velocity.x != 0 else Vector3(0, -1, 0)
-			mat.gravity = Vector3(0, 10, 0)
-			mat.initial_velocity_max = 0
-			mat.initial_velocity_min = 0
-		"mud":
-			var p = mud_particles_2d
-			var mat = p.process_material as ParticleProcessMaterial
 
-			mat.direction = Vector3(0, -1, 0)
-			mat.spread = 120.0
-			p.restart()
-
-			await get_tree().create_timer(p.lifetime).timeout
-			mat.direction = Vector3(0, -0.7, 0)
-			mat.spread = 50
-		"sand":
-			var p = sand_particles_2d
-			var mat = p.process_material as ParticleProcessMaterial
-
-			mat.direction = Vector3(0, -1, 0)
-			mat.initial_velocity_max = 70
-			mat.initial_velocity_min = 40
-			mat.spread = 30
-			p.restart()
-
-			await get_tree().create_timer(p.lifetime).timeout
-			mat.direction = Vector3(0, -0.8, 0)
-			mat.initial_velocity_max = 50
-			mat.spread = 60
-		"ice":
-			var p = ice_particles_2d
-			var mat = p.process_material as ParticleProcessMaterial
-
-			p.amount = 15
-			mat.gravity.y = 300
-			mat.direction = Vector3(0, -1, 0)
-			mat.spread = 120
-			mat.angle_max = -400
-			mat.angle_min = 100
-			p.restart()
-
-			await get_tree().create_timer(p.lifetime).timeout
-			p.amount = 15
-			mat.gravity.y = 0
-			mat.direction = Vector3(0, 0, 0)
-			mat.spread = 10
-			mat.angle_max = 0
-			mat.angle_min = 0
-
-	landing_burst_active = false
-	dust_particles_2d.one_shot = false # <-- Added
-	sand_particles_2d.one_shot = false
-	mud_particles_2d.one_shot = false
-	ice_particles_2d.one_shot = false
+func get_burst_parent() -> Node:
+	for i in get_slide_collision_count():
+		var c := get_slide_collision(i)
+		if c.get_normal().dot(up_direction) > 0.7:
+			var col = c.get_collider()
+			if col is TileMapLayer:
+				return col.get_parent()
+			if col is Node2D:
+				return col
+	return get_parent()

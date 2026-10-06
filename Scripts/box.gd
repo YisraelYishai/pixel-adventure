@@ -60,6 +60,7 @@ func broken_pieces():
 		# --- The Explosion Effect ---
 		var random_direction = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, -0.2)).normalized()
 		var random_force = randf_range(150, 400) 
+		player.cam.gentle_shake(2, 0.35)
 		piece.apply_central_impulse(random_direction * random_force)
 		
 	hide()

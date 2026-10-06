@@ -1,6 +1,6 @@
 extends StaticBody2D
 
-var debris_scene = preload("res://Scenes/blocks_debris.tscn")
+var debris_scene = preload("res://Scenes/objects/blocks_debris.tscn")
 
 var part_1_tex = preload("res://Assets/Pixel Adventure 1/Traps/Blocks/Part 1 (22x22).png")
 var part_2_tex = preload("res://Assets/Pixel Adventure 1/Traps/Blocks/Part 2 (22x22).png")
@@ -62,4 +62,3 @@ func respawn():
 	$HitboxBottom/CollisionShape2D.disabled = false
 	$HitboxTop/CollisionShape2D.disabled = false
 	show()
-	Global.fade_in(self)

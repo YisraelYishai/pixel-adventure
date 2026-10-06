@@ -7,7 +7,7 @@
 radius = 11.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_ngmcx"]
-radius = 12.0
+radius = 13.0
 
 [node name="Spiked Ball" type="Node2D" unique_id=1458619844]
 script = ExtResource("1_yjqqj")

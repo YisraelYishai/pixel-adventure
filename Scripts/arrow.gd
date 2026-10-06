@@ -9,7 +9,7 @@ func _ready() -> void:
 
 func _on_body_entered(body: Node2D) -> void:
 	if body.slamming == false:
-		body.cam.gentle_shake(1.0, 0.18)
+		body.cam.gentle_shake(1, 0.18)
 		body.apply_bounce(-400)
 	$AnimatedSprite2D.play("hit")
 	await $AnimatedSprite2D.animation_finished

@@ -13,6 +13,7 @@ func _ready() -> void:
 func _on_body_entered(body: Node2D) -> void:
 	if status == false:
 		status = true
+		body.cam.gentle_shake(1, 0.35)
 		body.new_respawn(send_position)
 		animated_sprite_2d.play("flag_out")
 		$Confetti.restart()
