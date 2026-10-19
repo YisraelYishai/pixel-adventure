@@ -15,6 +15,7 @@ script = ExtResource("1_yjqqj")
 [node name="ChainContainer" type="Node2D" parent="." unique_id=1213827761]
 
 [node name="Ball" type="AnimatableBody2D" parent="." unique_id=1840304368]
+sync_to_physics = false
 
 [node name="CollisionShape2D2" type="CollisionShape2D" parent="Ball" unique_id=1499929273]
 process_physics_priority = 1
@@ -32,5 +33,3 @@ texture = ExtResource("3_w77yk")
 process_physics_priority = 1
 shape = SubResource("CircleShape2D_ngmcx")
 debug_color = Color(0.70126766, 0.4913296, 0.04589718, 0.41960785)
-
-[connection signal="body_entered" from="Ball/Detector" to="." method="_on_detector_body_entered"]

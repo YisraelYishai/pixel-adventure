@@ -8,6 +8,25 @@ const BASE_FRICTION = 500.0
 const BASE_JUMP_VELOCITY = -400.0
 const BASE_WALL_JUMP_VELOCITY = 150.0
 const BASE_WALL_SLIDE_GRAVITY = 90.0
+const COYOTE_TIME = 0.1
+const JUMP_BUFFER_TIME = 0.12
+const WALL_COYOTE_TIME = 0.1
+const WALL_JUMP_LOCK_TIME = 0.1
+const AIR_ACCEL_MULT = 1.5
+const AIR_FRICTION_MULT = 1.0
+const CEILING_CORRECTION_PX = 6
+const LEDGE_CORRECTION_PX = 8
+const DASH_SPEED = 400.0
+const DASH_TIME = 0.2
+const DASH_COOLDOWN = 0.75
+const MAX_DASHES = 1
+const DASH_EXIT_MULT = 1.3
+const DASH_JUMP_CARRY = 360.0
+const DASH_ANIMATION = "jump"
+const DASH_GHOST_INTERVAL = 0.03
+const DASH_GHOST_FADE = 0.22
+const DASH_GHOST_COLOR = Color(0.51, 0.851, 1.0, 0.4)
+const DASH_PUFF_COLOR = Color(0.85, 0.95, 1.0, 0.9)
 const SLAM_VELOCITY = 1100.0
 const SLAM_PAUSE_TIME = 0.3
 const LANDING_MIN_SPEED = 250.0
@@ -54,6 +73,20 @@ var var_jump_applied: bool = false
 var released_jump_key: bool = false
 var double_jumping = false
 var wall_sliding = false
+var coyote_timer := 0.0
+var jump_buffer_timer := 0.0
+var wall_coyote_timer := 0.0
+var wall_jump_lock := 0.0
+var last_wall_normal := Vector2.ZERO
+var dashing := false
+var dash_dir := 1.0
+var dash_timer := 0.0
+var dash_cooldown := 0.0
+var dashes_left := MAX_DASHES
+var ghost_timer := 0.0
+var flash_tween: Tween
+var dash_tween: Tween
+var ghost_material: CanvasItemMaterial
 var slamming = false
 var slam_effect = "nil"
 var slam_timer = 0.0
@@ -124,6 +157,49 @@ func _physics_process(delta: float) -> void:
 	if slam_timer > 0:
 		slam_timer -= delta
 
+	# Movement
+	var direction := Input.get_axis("left", "right")
+	var jump_just_pressed := Input.is_action_just_pressed("jump")
+
+	# Jump timers
+	if jump_just_pressed:
+		jump_buffer_timer = JUMP_BUFFER_TIME
+	else:
+		jump_buffer_timer = maxf(jump_buffer_timer - delta, 0.0)
+
+	if is_on_floor():
+		coyote_timer = COYOTE_TIME
+	else:
+		coyote_timer = maxf(coyote_timer - delta, 0.0)
+
+	if is_on_wall() and !is_on_floor() and can_move:
+		wall_coyote_timer = WALL_COYOTE_TIME
+		last_wall_normal = get_wall_normal()
+	else:
+		wall_coyote_timer = maxf(wall_coyote_timer - delta, 0.0)
+	
+	# Dash
+	dash_cooldown = maxf(dash_cooldown - delta, 0.0)
+
+	if is_on_floor() and !dashing and dash_cooldown <= 0.0 and dashes_left < MAX_DASHES:
+		dashes_left = MAX_DASHES
+		flash_dash_ready()
+
+	if Input.is_action_just_pressed("dash") and can_start_dash():
+		start_dash(get_dash_direction(direction))
+
+	if dashing:
+		dash_timer -= delta
+		ghost_timer -= delta
+		if ghost_timer <= 0.0:
+			ghost_timer = DASH_GHOST_INTERVAL
+			spawn_afterimage(DASH_GHOST_COLOR, DASH_GHOST_FADE)
+		velocity.y = 0.0
+		velocity.x = dash_dir * DASH_SPEED
+		var blocked := is_on_wall() and signf(get_wall_normal().x) == -dash_dir
+		if dash_timer <= 0.0 or blocked or not can_move:
+			end_dash()
+	
 	# Handle Terrains
 	var detected_surface = get_surface_type()
 	current_wall_surface = get_wall_surface_type()
@@ -133,7 +209,7 @@ func _physics_process(delta: float) -> void:
 	update_particles(floor_surface)
 
 	# Add the gravity
-	if not is_on_floor() and !slamming:
+	if not is_on_floor() and !slamming and !dashing:
 		velocity += get_gravity() * delta
 
 	# Check Bounce for Trampoline
@@ -143,11 +219,6 @@ func _physics_process(delta: float) -> void:
 	# Handle jump
 	if is_on_floor() and can_move:
 		air_jump = 0
-		if Input.is_action_pressed("jump") and air_jump < 1 and !slamming:
-			var_jump_applied = false
-			released_jump_key = false
-			air_jump += 1
-			velocity.y = jump_velocity
 	else:
 		if !released_jump_key and !Input.is_action_pressed("jump") and !slamming:
 			released_jump_key = true
@@ -157,24 +228,50 @@ func _physics_process(delta: float) -> void:
 				velocity.y *= 0.5
 				var_jump_applied = true
 
-		if Input.is_action_just_pressed("jump") and air_jump < 2 and !wall_sliding and animator_status and can_move:
+	if can_move and !slamming:
+		var wall_n := last_wall_normal
+		var wall_jump_ok := false
+		if is_on_wall() and !is_on_floor():
+			wall_n = get_wall_normal()
+			wall_jump_ok = direction != 0 and sign(direction) == -sign(wall_n.x)
+		elif wall_coyote_timer > 0.0 and !is_on_floor():
+			wall_jump_ok = true
+
+		if jump_buffer_timer > 0.0 and coyote_timer > 0.0:
+			# Ground jump (also covers coyote time)
+			end_dash(true)
+			velocity.y = jump_velocity
+			air_jump = 1
+			var_jump_applied = false
+			released_jump_key = false
+			coyote_timer = 0.0
+			jump_buffer_timer = 0.0
+		elif jump_buffer_timer > 0.0 and wall_jump_ok:
+			# Wall jump: always pushes away from the wall
+			end_dash(true)
+			velocity.y = jump_velocity
+			velocity.x = wall_n.x * wall_jump_velocity
+			ice_momentum = velocity.x
+			wall_jump_lock = WALL_JUMP_LOCK_TIME
+			air_jump += 1
+			var_jump_applied = false
+			released_jump_key = false
+			double_jumping = false
+			wall_sliding = false
+			wall_coyote_timer = 0.0
+			jump_buffer_timer = 0.0
+			animator.flip_h = wall_n.x < 0
+		elif jump_just_pressed and air_jump < 2 and !wall_sliding and animator_status:
+			# Double jump
+			end_dash(true)
 			air_jump += 1
 			double_jumping = true
+			var_jump_applied = false
+			released_jump_key = false
+			jump_buffer_timer = 0.0
 			update_animations()
 			velocity.y = jump_velocity + 100
 
-	# Handle Wall Jump
-	if Input.is_action_just_pressed("jump") and is_on_wall() and can_move:
-		if Input.is_action_pressed("right"):
-			velocity.y = jump_velocity
-			velocity.x = -wall_jump_velocity
-		if Input.is_action_pressed("left"):
-			velocity.y = jump_velocity
-			velocity.x = wall_jump_velocity
-		air_jump += 1
-
-	# Handle Wall Sliding
-	var direction := Input.get_axis("left", "right")
 
 	if is_on_wall() and !is_on_floor() and can_move:
 		var normal = get_wall_normal()
@@ -186,7 +283,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		wall_sliding = false
 
-	if wall_sliding:
+	if wall_sliding and !dashing:
 		velocity.y += (wall_slide_gravity * delta)
 		velocity.y = min(velocity.y, wall_slide_gravity)
 
@@ -194,11 +291,12 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed("slam"):
 		if can_fall_through:
 			set_collision_mask_value(2, false)
+			coyote_timer = 0.0
 			await get_tree().create_timer(0.25).timeout
 			set_collision_mask_value(2, true)
 			can_fall_through = false
 			return
-		if !is_on_floor() and !slamming and !wall_sliding and slam_timer <= 0 and can_move:
+		if !is_on_floor() and !slamming and !wall_sliding and slam_timer <= 0 and can_move and !dashing:
 			slamming = true
 			box_breakable = true
 			if air_jump == 1:
@@ -230,48 +328,44 @@ func _physics_process(delta: float) -> void:
 		await disappear()
 		respawn(false)
 
-	# Get the input direction and handle the movement/deceleration.
-	if current_surface == "ice" or cached_surface == "ice":
+	if dashing:
+		ice_momentum = velocity.x
+	elif wall_jump_lock > 0.0:
+		wall_jump_lock -= delta
+		ice_momentum = velocity.x
+	elif current_surface == "ice" or cached_surface == "ice":
 		if direction != 0:
 			ice_momentum = move_toward(ice_momentum, direction * speed, acceleration * delta)
 		else:
 			ice_momentum = move_toward(ice_momentum, 0, friction * 0.2 * delta)
-
 		velocity.x = ice_momentum
-
 	else:
-		var target_velocity = direction * speed
-
-		if direction != 0 and !slamming and can_move:
-			velocity.x = move_toward(velocity.x, target_velocity, acceleration * delta)
-		else:
-			velocity.x = move_toward(velocity.x, 0, friction * delta)
-
-		ice_momentum = velocity.x
-
+		var accel: float = acceleration
+		var fric: float = friction
 		air_control = 1.0
-
 		if not is_on_floor():
 			if current_surface == "mud":
 				air_control = 0.5
+			accel *= AIR_ACCEL_MULT * air_control
+			fric *= AIR_FRICTION_MULT
 
-			if direction != 0 and !slamming and can_move:
-				velocity.x = move_toward(
-					velocity.x,
-					target_velocity,
-					acceleration * air_control * delta,
-				)
-			else:
-				velocity.x = move_toward(velocity.x, 0, friction * delta)
+		if direction != 0 and !slamming and can_move:
+			velocity.x = move_toward(velocity.x, direction * speed, accel * delta)
+		else:
+			velocity.x = move_toward(velocity.x, 0, fric * delta)
+		ice_momentum = velocity.x
 
 	# Handle Flip
-	if can_move:
+	if can_move and wall_jump_lock <= 0.0 and !dashing:
 		if direction == 1:
 			animator.flip_h = false
 		elif direction == -1:
 			animator.flip_h = true
 
 	var fall_speed = velocity.y
+	if can_move and !slamming:
+		try_ceiling_correction(delta)
+		try_ledge_correction(delta)
 
 	move_and_slide()
 
@@ -346,6 +440,9 @@ func disappear():
 func update_animations():
 	if transitioning:
 		return
+	if dashing and !is_hurt:
+		animator.play(DASH_ANIMATION + player_character)
+		return
 	# Handle Animations
 	if is_on_floor() and !is_hurt:
 		double_jumping = false
@@ -375,8 +472,55 @@ func update_animations():
 func fruit_collected():
 	fruits += 1
 
+func try_ceiling_correction(delta: float) -> void:
+	if velocity.y >= 0.0:
+		return
+
+	var motion: Vector2 = Vector2(0.0, velocity.y * delta)
+	var hit_info: KinematicCollision2D = KinematicCollision2D.new()
+	if not test_move(global_transform, motion, hit_info):
+		return
+	# Only correct real ceiling hits (normal pointing down), not slopes or walls
+	if hit_info.get_normal().y < 0.7:
+		return
+
+	var first: int = 1 if velocity.x >= 0.0 else -1
+	for i in range(1, CEILING_CORRECTION_PX + 1):
+		for side in [first, -first]:
+			var offset: Vector2 = Vector2(float(i * side), 0.0)
+			var shifted: Transform2D = global_transform.translated(offset)
+			if test_move(shifted, Vector2.ZERO):
+				continue # would end up inside a wall
+			if not test_move(shifted, motion):
+				global_position.x += offset.x
+				return
+
+
+func try_ledge_correction(delta: float) -> void:
+	if is_on_floor() or velocity.y > 0.0:
+		return
+	if absf(velocity.x) < 10.0:
+		return
+
+	var dx: float = signf(velocity.x) * maxf(absf(velocity.x * delta), 1.0)
+	var motion: Vector2 = Vector2(dx, 0.0)
+	if not test_move(global_transform, motion):
+		return
+
+	for i in range(1, LEDGE_CORRECTION_PX + 1):
+		var offset: Vector2 = Vector2(0.0, float(-i))
+		var shifted: Transform2D = global_transform.translated(offset)
+		if test_move(shifted, Vector2.ZERO):
+			continue # head would be inside a ceiling
+		if not test_move(shifted, motion):
+			global_position.y -= float(i)
+			return
+
 
 func apply_bounce(bounce_force: float) -> void:
+	end_dash(true)
+	dashes_left = MAX_DASHES
+	coyote_timer = 0.0
 	velocity.y = bounce_force
 	air_jump += 1
 	is_bouncing = true
@@ -386,6 +530,8 @@ func apply_bounce(bounce_force: float) -> void:
 func hit(enemy_position: Vector2, enemy_motion: Vector2 = Vector2.ZERO):
 	if is_hurt or is_dead or is_invincible or respawn_locked or transitioning:
 		return
+
+	end_dash()
 
 	var id := life_id
 	$DebugLabel.add_theme_color_override("font_color", Color.RED)
@@ -433,8 +579,12 @@ func hit(enemy_position: Vector2, enemy_motion: Vector2 = Vector2.ZERO):
 
 func cancel_pending() -> void:
 	life_id += 1
-	if death_tween and death_tween.is_valid():
-		death_tween.kill()
+	dashing = false
+	dash_cooldown = 0.0
+	dashes_left = MAX_DASHES
+	if flash_tween and flash_tween.is_valid():
+		flash_tween.kill()
+	animator.self_modulate = Color.WHITE
 
 func invincibility_flash() -> void:
 	var id := life_id
@@ -516,6 +666,10 @@ func respawn(health_refill = true):
 	wall_sliding = false
 	ice_momentum = 0.0
 	velocity = Vector2.ZERO
+	coyote_timer = 0.0
+	jump_buffer_timer = 0.0
+	wall_coyote_timer = 0.0
+	wall_jump_lock = 0.0
 	animator.modulate.a = 1.0
 	$DebugLabel.add_theme_color_override("font_color", Color.WHITE)
 
@@ -761,6 +915,43 @@ class LandingBurst extends Node2D:
 			draw_set_transform(p.pos, p.rot, Vector2.ONE)
 			draw_rect(Rect2(-s * 0.5, -s * 0.5, s, s), c)
 
+class DashBurst extends Node2D:
+	var parts: Array = []
+	var color := Color.WHITE
+
+	func setup(dir: float, col: Color, count: int, y_range: float, grounded: bool) -> void:
+		color = col
+		for i in count:
+			var spd := randf_range(60.0, 180.0)
+			var vy := randf_range(-0.35, 0.35) * spd * 0.5
+			if grounded:
+				vy = -absf(vy)
+			parts.append({
+				"pos": Vector2(randf_range(-4.0, 4.0), randf_range(-y_range, y_range)),
+				"vel": Vector2(-dir * spd, vy),
+				"age": 0.0,
+				"life": randf_range(0.18, 0.32),
+				"size": randf_range(2.0, 4.0),
+			})
+
+	func _process(delta: float) -> void:
+		for p in parts:
+			p.vel = p.vel.move_toward(Vector2.ZERO, 500.0 * delta)
+			p.pos += p.vel * delta
+			p.age += delta
+		parts = parts.filter(func(p): return p.age < p.life)
+		if parts.is_empty():
+			queue_free()
+		else:
+			queue_redraw()
+
+	func _draw() -> void:
+		for p in parts:
+			var k: float = p.age / p.life
+			var s: float = p.size * (1.0 - k)
+			var c := color
+			c.a = 1.0 - k
+			draw_rect(Rect2(p.pos - Vector2(s, s) * 0.5, Vector2(s, s)), c)
 
 func trigger_landing_particles(impact_speed: float = 400.0) -> void:
 	if not standing_on_tilemap():
@@ -788,3 +979,105 @@ func get_burst_parent() -> Node:
 			if col is Node2D:
 				return col
 	return get_parent()
+
+func can_start_dash() -> bool:
+	return can_move and !dashing and !slamming and !transitioning and !is_hurt \
+		and !is_dead and !respawn_locked and dash_cooldown <= 0.0 and dashes_left > 0
+
+
+func get_dash_direction(input_dir: float) -> float:
+	var dir := signf(input_dir)
+	if dir == 0.0:
+		dir = -1.0 if animator.flip_h else 1.0
+	# Dashing into a wall you're touching would waste it, so dash away instead
+	if is_on_wall() and !is_on_floor():
+		var wn := get_wall_normal()
+		if signf(wn.x) == -dir:
+			dir = signf(wn.x)
+	return dir
+
+
+func start_dash(dir: float) -> void:
+	dashing = true
+	dash_dir = dir
+	dash_timer = DASH_TIME
+	dash_cooldown = DASH_COOLDOWN
+	dashes_left -= 1
+	ghost_timer = 0.0
+	velocity = Vector2(dir * DASH_SPEED, 0.0)
+	ice_momentum = velocity.x
+	animator.flip_h = dir < 0.0
+
+	cam.impact_shake(2.5, 0.12)
+	play_dash_stretch()
+	spawn_dash_burst(dir)
+
+
+func end_dash(keep_momentum: bool = false) -> void:
+	if not dashing:
+		return
+	dashing = false
+	var limit: float = DASH_JUMP_CARRY if keep_momentum else speed * DASH_EXIT_MULT
+	velocity.x = clampf(velocity.x, -limit, limit)
+	ice_momentum = velocity.x
+
+
+func play_dash_stretch() -> void:
+	if dash_tween and dash_tween.is_valid():
+		dash_tween.kill()
+	animator.scale = Vector2(1.35, 0.75)
+	dash_tween = create_tween()
+	dash_tween.tween_property(animator, "scale", Vector2.ONE, DASH_TIME + 0.08) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+
+func spawn_afterimage(tint: Color, fade: float) -> void:
+	var frames: SpriteFrames = animator.sprite_frames
+	if frames == null:
+		return
+	var tex: Texture2D = frames.get_frame_texture(animator.animation, animator.frame)
+	if tex == null:
+		return
+
+	if ghost_material == null:
+		ghost_material = CanvasItemMaterial.new()
+		ghost_material.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+
+	var ghost := Sprite2D.new()
+	ghost.texture = tex
+	ghost.centered = animator.centered
+	ghost.offset = animator.offset
+	ghost.flip_h = animator.flip_h
+	ghost.material = ghost_material
+	ghost.modulate = tint
+	ghost.z_as_relative = false
+	ghost.z_index = z_index - 1
+	get_parent().add_child(ghost)
+	ghost.global_position = animator.global_position
+	ghost.global_scale = animator.global_scale
+
+	var tw := ghost.create_tween()
+	tw.tween_property(ghost, "modulate:a", 0.0, fade)
+	tw.tween_callback(ghost.queue_free)
+
+
+func spawn_dash_burst(dir: float) -> void:
+	var grounded := is_on_floor()
+	var col: Color = DASH_PUFF_COLOR
+	if grounded:
+		var cfg: Dictionary = LANDING_FX.get(current_surface, LANDING_FX["default"])
+		col = cfg.color # sand/mud/ice dashes kick up the right colored dust
+
+	var burst := DashBurst.new()
+	burst.setup(dir, col, 10 if grounded else 8, 4.0 if grounded else 10.0, grounded)
+	burst.z_as_relative = false
+	burst.z_index = z_index - 1
+	get_parent().add_child(burst)
+	burst.global_position = global_position + (Vector2(0, FOOT_OFFSET_Y) if grounded else Vector2.ZERO)
+
+func flash_dash_ready() -> void:
+	if flash_tween and flash_tween.is_valid():
+		flash_tween.kill()
+	animator.self_modulate = Color(1.8, 1.8, 1.8, 1.0)
+	flash_tween = create_tween()
+	flash_tween.tween_property(animator, "self_modulate", Color.WHITE, 0.45)

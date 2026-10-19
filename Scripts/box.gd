@@ -72,4 +72,3 @@ func respawn():
 	collision_shape_2d.disabled = false
 	slam_detector.disabled = false
 	show()
-	Global.fade_in(self)

@@ -1,76 +1,78 @@
 extends Path2D
 
-enum Direction {
-	DOWN,
-	UP,
-	LEFT,
-	RIGHT,
-}
+@export_category("Script Controls")
+@export var wait_time: float = 1.0
+@export var smash_duration: float = 0.2
+@export var return_duration: float = 1.0
 
-@export var direction: Direction = Direction.DOWN
 @onready var animated_sprite_2d: AnimatedSprite2D = $PathFollow2D/AnimatableBody2D/AnimatedSprite2D
 @onready var path_follow_2d: PathFollow2D = $PathFollow2D
 
-var wait_time: float = 1.0
-var smash_duration: float = 0.2
-var return_duration: float = 2.0
 var is_dangerous: bool = false
+var offsets: Array[float] = []  # distance along the path of each curve point
 
 
 func _ready() -> void:
 	path_follow_2d.loop = false
 	path_follow_2d.rotates = false
-	path_follow_2d.progress_ratio = get_return_progress()
+	_build_offsets()
+	path_follow_2d.progress = 0.0
 	animated_sprite_2d.play("idle")
 	await get_tree().process_frame
-	start_path_smash()
-
-func start_path_smash() -> void:
-	var tween = create_tween().set_loops()
-
-	tween.tween_callback(func(): animated_sprite_2d.play("blink"))
-	tween.tween_interval(wait_time)
-	tween.tween_callback(func(): is_dangerous = true)
-
-	tween.tween_callback(func(): animated_sprite_2d.play("idle"))
-	tween.tween_property(path_follow_2d, "progress_ratio", get_target_progress(), smash_duration) \
-	.set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
-
-	tween.tween_callback(func(): play_hit_animation())
-	tween.tween_interval(wait_time)
-	tween.tween_callback(func(): is_dangerous = false)
-
-	tween.tween_property(path_follow_2d, "progress_ratio", get_return_progress(), return_duration) \
-	.set_trans(Tween.TRANS_LINEAR)
+	_run()
 
 
-func play_hit_animation():
-	match direction:
-		Direction.DOWN:
-			animated_sprite_2d.play("bottom_hit")
-		Direction.UP:
-			animated_sprite_2d.play("top_hit")
-		Direction.LEFT:
-			animated_sprite_2d.play("left_hit")
-		Direction.RIGHT:
-			animated_sprite_2d.play("right_hit")
+func _build_offsets() -> void:
+	offsets.clear()
+	var total := 0.0
+	offsets.append(0.0)
+	for i in range(1, curve.point_count):
+		total += curve.get_point_position(i - 1).distance_to(curve.get_point_position(i))
+		offsets.append(total)
 
 
-func get_target_progress() -> float:
-	match direction:
-		Direction.DOWN, Direction.RIGHT:
-			return 1.0
-		Direction.UP, Direction.LEFT:
-			return 0.0
+func _run() -> void:
+	var last := offsets.size() - 1
+	while true:
+		# forward: stop + smash at every corner
+		for i in range(last):
+			await _smash(i, i + 1)
+		# backward: slow retract, pausing at every corner
+		for i in range(last, 0, -1):
+			await _retract(i, i - 1)
 
-	return 1.0
+
+func _smash(from_i: int, to_i: int) -> void:
+	animated_sprite_2d.play("blink")
+	await get_tree().create_timer(wait_time).timeout
+
+	is_dangerous = true
+	animated_sprite_2d.play("idle")
+	var tween := create_tween()
+	tween.tween_property(path_follow_2d, "progress", offsets[to_i], smash_duration) \
+		.set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
+	await tween.finished
+
+	play_hit_animation(_get_leg_direction(from_i, to_i))
+	await get_tree().create_timer(wait_time).timeout
+	is_dangerous = false
 
 
-func get_return_progress() -> float:
-	match direction:
-		Direction.DOWN, Direction.RIGHT:
-			return 0.0
-		Direction.UP, Direction.LEFT:
-			return 1.0
+func _retract(from_i: int, to_i: int) -> void:
+	var leg_time := return_duration * (offsets[from_i] - offsets[to_i]) / offsets[-1]
+	var tween := create_tween()
+	tween.tween_property(path_follow_2d, "progress", offsets[to_i], leg_time) \
+		.set_trans(Tween.TRANS_LINEAR)
+	await tween.finished
+	await get_tree().create_timer(wait_time * 0.5).timeout
 
-	return 0.0
+
+func _get_leg_direction(from_i: int, to_i: int) -> Vector2:
+	return curve.get_point_position(to_i) - curve.get_point_position(from_i)
+
+
+func play_hit_animation(dir: Vector2) -> void:
+	if abs(dir.x) > abs(dir.y):
+		animated_sprite_2d.play("right_hit" if dir.x > 0 else "left_hit")
+	else:
+		animated_sprite_2d.play("bottom_hit" if dir.y > 0 else "top_hit")

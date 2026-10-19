@@ -3,4 +3,5 @@
 export_presets.cfg
 build/
 bin/
+.vscode/
 addons/
