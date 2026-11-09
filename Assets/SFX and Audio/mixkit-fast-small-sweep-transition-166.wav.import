@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://c4vxu3gr7pw4j"
+path="res://.godot/imported/mixkit-fast-small-sweep-transition-166.wav-329c212c69294a09e91deca61479d036.sample"
+
+[deps]
+
+source_file="res://Assets/SFX and Audio/mixkit-fast-small-sweep-transition-166.wav"
+dest_files=["res://.godot/imported/mixkit-fast-small-sweep-transition-166.wav-329c212c69294a09e91deca61479d036.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

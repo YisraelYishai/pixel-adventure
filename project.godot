@@ -21,6 +21,10 @@ config/icon="res://logo.png"
 config/macos_native_icon="res://mac_icon.icns"
 config/windows_native_icon="res://windows_icon.ico"
 
+[audio]
+
+buses/default_bus_layout="uid://bsb3kexxwe2hv"
+
 [autoload]
 
 Global="*uid://rhhxfqelp28p"
@@ -34,9 +38,13 @@ window/size/borderless=true
 window/size/window_width_override=640
 window/size/window_height_override=360
 window/hdr/request_hdr_output=true
-window/stretch/mode="viewport"
-window/stretch/aspect="expand"
+window/stretch/mode="canvas_items"
 window/stretch/scale_mode="integer"
+
+[editor]
+
+version_control/plugin_name="GitPlugin"
+version_control/autoload_on_startup=true
 
 [editor_plugins]
 

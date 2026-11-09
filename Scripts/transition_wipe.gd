@@ -66,6 +66,8 @@ func _build(start_covered := false) -> void:
 
 func _grow() -> void:
 	var tw := create_tween().set_parallel(true)
+	if Global.get_setting("reduced_motion"):
+		tw.set_speed_scale(100)
 	for d in _diamonds:
 		var t: float = d.get_meta("delay")
 		tw.tween_property(d, "scale", _sep, grow_time).from(Vector2.ZERO) \
@@ -77,6 +79,8 @@ func _grow() -> void:
 
 func _shrink() -> void:
 	var tw := create_tween().set_parallel(true)
+	if Global.get_setting("reduced_motion"):
+		tw.set_speed_scale(100)
 	var open_time := close_time if fill_gaps else 0.0
 	for d in _diamonds:
 		var t: float = d.get_meta("delay")

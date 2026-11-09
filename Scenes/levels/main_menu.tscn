@@ -2,7 +2,16 @@
 
 [ext_resource type="Script" uid="uid://tsyciym273rm" path="res://Scripts/main_menu.gd" id="1_l4et3"]
 [ext_resource type="PackedScene" uid="uid://0wian6puvx84" path="res://Scenes/ui_objects/background.tscn" id="1_vbtna"]
-[ext_resource type="Texture2D" uid="uid://df8m7cferr2t" path="res://Assets/Pixel Adventure 1/Menu/Buttons/Play.png" id="3_uahs1"]
+[ext_resource type="Script" uid="uid://bvydu3dn21emq" path="res://Scripts/menu_button.gd" id="3_uahs1"]
+[ext_resource type="Texture2D" uid="uid://cbebgcllkpv0t" path="res://Assets/Pixel Adventure 1/Menu/Buttons/Achievements.png" id="5_2m23o"]
+[ext_resource type="Texture2D" uid="uid://df8m7cferr2t" path="res://Assets/Pixel Adventure 1/Menu/Buttons/Play.png" id="7_dk7ck"]
+[ext_resource type="Texture2D" uid="uid://dsscokqwr6s42" path="res://Assets/Pixel Adventure 1/Menu/Buttons/Close.png" id="7_md87b"]
+[ext_resource type="Texture2D" uid="uid://c4n5meemtpxl2" path="res://Assets/Pixel Adventure 1/Menu/Buttons/Levels.png" id="8_dboxs"]
+[ext_resource type="Texture2D" uid="uid://ca8ommpxsnn83" path="res://Assets/Pixel Adventure 1/Menu/Buttons/Leaderboard.png" id="9_5ff3o"]
+[ext_resource type="PackedScene" uid="uid://gptyudb4u3mg" path="res://Scenes/ui_objects/settings_panel.tscn" id="10_5ff3o"]
+[ext_resource type="Texture2D" uid="uid://dkkwk2nr3adwd" path="res://Assets/Pixel Adventure 1/Menu/Buttons/Volume.png" id="10_md87b"]
+[ext_resource type="Texture2D" uid="uid://c51fyen85mlbe" path="res://Assets/Pixel Adventure 1/Menu/Buttons/Settings.png" id="11_vh6t3"]
+[ext_resource type="PackedScene" uid="uid://bpipmvqx5g83t" path="res://Scenes/ui_objects/transition_wipe.tscn" id="12_md87b"]
 
 [node name="Main Menu" type="Control" unique_id=1937514973]
 layout_mode = 3
@@ -12,23 +21,153 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_l4et3")
+metadata/_edit_horizontal_guides_ = [9.0, 0.0]
+metadata/_edit_vertical_guides_ = [640.0, 631.0]
 
 [node name="Background" parent="." unique_id=422274749 instance=ExtResource("1_vbtna")]
 background_image = "Random"
 
-[node name="TextureButton" type="TextureButton" parent="." unique_id=311769728]
+[node name="Title" type="Label" parent="." unique_id=876918940]
+unique_name_in_owner = true
+texture_filter = 5
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -10.5
-offset_top = 73.0
-offset_right = 10.5
-offset_bottom = 95.0
+offset_left = -180.0
+offset_top = -24.5
+offset_right = 180.0
+offset_bottom = 12.5
 grow_horizontal = 2
 grow_vertical = 2
-texture_normal = ExtResource("3_uahs1")
+mouse_filter = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.42352942)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = -3
+theme_override_constants/shadow_offset_y = 3
+theme_override_constants/outline_size = 1
+theme_override_constants/shadow_outline_size = 10
+theme_override_font_sizes/font_size = 36
+text = "pixel adventure"
+
+[node name="BottomRow" type="HBoxContainer" parent="." unique_id=714550862]
+unique_name_in_owner = true
+texture_filter = 5
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -84.0
+offset_top = 30.0
+offset_right = 84.0
+offset_bottom = 73.999985
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(1.25, 1.25)
+pivot_offset = Vector2(75, -35)
+offset_transform_enabled = true
+offset_transform_position = Vector2(0, 10)
+theme_override_constants/separation = 13
+alignment = 1
+
+[node name="AchievementsButton" type="TextureButton" parent="BottomRow" unique_id=1325876652]
+texture_filter = 5
+custom_minimum_size = Vector2(21, 20)
+layout_mode = 2
+size_flags_vertical = 4
+offset_transform_enabled = true
+offset_transform_position = Vector2(0, -11)
+texture_normal = ExtResource("5_2m23o")
+ignore_texture_size = true
+stretch_mode = 3
+script = ExtResource("3_uahs1")
+
+[node name="PlayButton" type="TextureButton" parent="BottomRow" unique_id=513106878]
+unique_name_in_owner = true
+texture_filter = 5
+custom_minimum_size = Vector2(32, 33)
+layout_mode = 2
+size_flags_vertical = 4
+offset_transform_enabled = true
+offset_transform_position = Vector2(0, -11)
+offset_transform_scale = Vector2(1.8, 1.8)
+texture_normal = ExtResource("7_dk7ck")
+ignore_texture_size = true
+stretch_mode = 3
+script = ExtResource("3_uahs1")
+
+[node name="LevelsButton" type="TextureButton" parent="BottomRow" unique_id=736779064]
+texture_filter = 5
+custom_minimum_size = Vector2(21, 20)
+layout_mode = 2
+size_flags_vertical = 4
+offset_transform_enabled = true
+offset_transform_position = Vector2(0, -10)
+texture_normal = ExtResource("8_dboxs")
+ignore_texture_size = true
+stretch_mode = 3
+script = ExtResource("3_uahs1")
+
+[node name="TopRow" type="HBoxContainer" parent="." unique_id=1216898548]
+unique_name_in_owner = true
+texture_filter = 5
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -320.0
+offset_right = 224.0
+offset_bottom = 22.0
+grow_horizontal = 2
+scale = Vector2(1.2, 1.2)
+pivot_offset = Vector2(30, -39)
+alignment = 1
+
+[node name="QuitButton" type="TextureButton" parent="TopRow" unique_id=1792372662]
+unique_name_in_owner = true
+texture_filter = 5
+layout_mode = 2
+size_flags_vertical = 0
+offset_transform_visual_only = false
+texture_normal = ExtResource("7_md87b")
+script = ExtResource("3_uahs1")
+
+[node name="SpacerVertical" type="Control" parent="TopRow" unique_id=316304494]
+custom_minimum_size = Vector2(425, 0)
+layout_mode = 2
+
+[node name="LeaderboardButton" type="TextureButton" parent="TopRow" unique_id=1935721669]
+texture_filter = 5
+layout_mode = 2
+texture_normal = ExtResource("9_5ff3o")
+script = ExtResource("3_uahs1")
+
+[node name="VolumeButton" type="TextureButton" parent="TopRow" unique_id=357063616]
+unique_name_in_owner = true
+texture_filter = 5
+layout_mode = 2
+toggle_mode = true
+texture_normal = ExtResource("10_md87b")
+script = ExtResource("3_uahs1")
+
+[node name="SettingsButton" type="TextureButton" parent="TopRow" unique_id=786833852]
+unique_name_in_owner = true
+texture_filter = 5
+layout_mode = 2
+texture_normal = ExtResource("11_vh6t3")
+script = ExtResource("3_uahs1")
+
+[node name="SettingsPanel" parent="." unique_id=1432670595 instance=ExtResource("10_5ff3o")]
+unique_name_in_owner = true
+layout_mode = 1
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=221790223]
+
+[node name="TransitionWipe" parent="." unique_id=1925025303 instance=ExtResource("12_md87b")]
+unique_name_in_owner = true

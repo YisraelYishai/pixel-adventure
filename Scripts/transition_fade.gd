@@ -11,6 +11,8 @@ func animate() -> void:
 	get_tree().paused = true
 	
 	color_rect_tween = create_tween().set_trans(Tween.TRANS_SINE)
+	if Global.get_setting("reduced_motion"):
+		color_rect_tween.set_speed_scale(100)
 	color_rect_tween.tween_property(color_rect, "modulate:a", 1.0, 0.2).connect("finished", finish)
 	color_rect_tween.chain().tween_property(color_rect, "modulate:a", 0.0, 0.4)
 

@@ -125,12 +125,8 @@ var death_tween: Tween
 @onready var tile_map_layer: TileMapLayer = %TileMapLayer
 @onready var transition_fade: CanvasLayer = %TransitionFade
 @onready var transition_wipe: Node = %TransitionWipe
-@onready var shutter: ColorRect = $"../../CanvasLayer/Shutter"
-
 
 func _ready() -> void:
-	
-	shutter.visible = true
 	
 	set_character()
 	
@@ -139,11 +135,6 @@ func _ready() -> void:
 	self.visible = false
 	await get_tree().create_timer(0.3).timeout
 	self.position = %InitialSpawnPlayer.position
-	
-	var transition_reparent := transition_wipe
-	transition_reparent.play(true)
-	await transition_reparent.covered
-	shutter.visible = false
 	
 	appear()
 	new_respawn(%InitialSpawnPlayer.position)
@@ -692,7 +683,6 @@ func respawn(health_refill = true):
 	await get_tree().create_timer(0.2).timeout
 	Global.respawn_objects.emit()
 	respawning = false
-
 
 func get_surface_type() -> String:
 	floor_surface = "default"
